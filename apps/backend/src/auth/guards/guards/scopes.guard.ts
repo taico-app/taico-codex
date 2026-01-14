@@ -48,8 +48,7 @@ export class ScopesGuard implements CanActivate {
         : required.every((s) => tokenScopes.has(s));
 
     if (!ok) {
-      // You can introduce a dedicated Forbidden error later.
-      // For now, keep your auth error scheme consistent.
+      // TODO: figure out how we map this error to WWW-Authenticate headers with the required scopes
       throw new InsufficientScopeError(
         `Missing required scope(s): ${required.join(', ')} (mode=${meta.mode})`,
       );
