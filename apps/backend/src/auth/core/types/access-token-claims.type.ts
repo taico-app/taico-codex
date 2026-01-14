@@ -1,8 +1,8 @@
 /**
- * Shape of the JWT payload we issue for MCP access tokens.
+ * Shape of the JWT payload we issue for access tokens.
  * Service layer consumes this pure type instead of HTTP DTO classes (see docs/reviews/dto-service-layer-types.md).
  */
-export interface McpJwtPayload {
+export interface AccessTokenClaims {
   /**
    * Issuer - authorization server identifier (URL)
    */
@@ -49,7 +49,7 @@ export interface McpJwtPayload {
   /**
    * MCP server identifier (providedId) that the token is scoped to
    */
-  server_identifier: string;
+  mcp_server_identifier?: string;
 
   /**
    * Resource URL associated with the authorization request
