@@ -1,55 +1,58 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, InAppNavProvider } from './providers';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './providers';
 import { AuthProvider, LoginPage, ProtectedRoute } from '../auth';
-import { HomePage, SettingsPage, TaskerooRoute, WikirooRoute, MCPRegistryRoute, AgentsRoute, LogoutPage } from './routes';
-import { ShellSwitch } from './shells/ShellSwitch';
+import { BetaShell } from './shells/BetaShell';
+import { HomeRoutes } from '../features/home/HomeRoutes';
+import { BASE_PATH } from '../shared/const/base';
 import './App.css';
+import { TaskerooRoutes } from '../features/beta-taskeroo/TaskerooRoutes';
+import { LogoutPage } from './routes/LogoutPage';
+import { WikirooRoutes } from '../features/wikiroo/WikirooRoutes';
+import { MCPRegistryPage } from './routes/MCPRegistryPage';
+import { AgentsPage } from './routes/AgentsPage';
 
-function AppRoutes() {
+function BetaAppRoutes() {
   return (
     <Routes>
       {/* Top level pages */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/settings" element={<SettingsPage />} />
       <Route path="/logout" element={<LogoutPage />} />
+      <Route index element={<Navigate to="home" replace />} />
 
       {/* Features ⬇️ */}
+      {/* Home, settings, all the app level stuff */}
+      <Route path="/*" element={<HomeRoutes />} />
 
       {/* Taskeroo with nested routes */}
-      <Route path="/taskeroo/*" element={<TaskerooRoute />} />
+      <Route path="/taskeroo/*" element={<TaskerooRoutes />} />
 
-      <Route path="/wikiroo" element={<WikirooRoute />} />
-      <Route path="/mcp-registry" element={<MCPRegistryRoute />} />
-      <Route path="/agents" element={<AgentsRoute />} />
+      <Route path="/wikiroo/*" element={<WikirooRoutes />} />
+      <Route path="/mcp-registry" element={<MCPRegistryPage />} />
+      <Route path="/agents" element={<AgentsPage />} />
+
     </Routes>
   );
 }
 
 export function App() {
   return (
-    <BrowserRouter basename="/beta">
+    <BrowserRouter basename={BASE_PATH}>
       <ThemeProvider>
         <AuthProvider>
-          <InAppNavProvider>
-            <Routes>
-              {/* Login page - no shell */}
-              <Route path="/login" element={<LoginPage />} />
-
-              {/* Main app - with shells and auth protection */}
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <ShellSwitch>
-                      <AppRoutes />
-                    </ShellSwitch>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </InAppNavProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path='*'
+              element={
+                <ProtectedRoute>
+                  <BetaShell>
+                    <BetaAppRoutes />
+                  </BetaShell>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
-  );
+  )
 }
