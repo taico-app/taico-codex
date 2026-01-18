@@ -6,6 +6,7 @@ import { TaskEntity } from './task.entity';
 import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
+import { ActorEntity } from '../identity-provider/actor.entity';
 import {
   CreateTaskInput,
   UpdateTaskInput,
@@ -19,6 +20,7 @@ import {
   CommentResult,
   ListTasksResult,
   TagResult,
+  ActorResult,
 } from './dto/service/taskeroo.service.types';
 import {
   TaskNotFoundError,
@@ -34,6 +36,7 @@ import {
   TaskStatusChangedEvent,
 } from './events/taskeroo.events';
 import { getRandomTagColor } from '../common/utils/color-palette.util';
+import { ActorService } from 'src/identity-provider/actor.service';
 
 @Injectable()
 export class TaskerooService {
@@ -46,6 +49,9 @@ export class TaskerooService {
     private readonly commentRepository: Repository<CommentEntity>,
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
+    @InjectRepository(ActorEntity)
+    private readonly actorRepository: Repository<ActorEntity>,
+    private readonly actorService: ActorService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -53,17 +59,35 @@ export class TaskerooService {
     this.logger.log({
       message: 'Creating task',
       name: input.name,
-      assignee: input.assignee,
+      assigneeActorId: input.assigneeActorId,
       sessionId: input.sessionId,
     });
+
+    // Look up actor IDs from slugs
+    let assigneeActorId: string | null = null;
+
+    if (input.assigneeActorId) {
+      const assigneeActor = await this.actorService.getActorByIdOrSlug(input.assigneeActorId);
+      if (!assigneeActor) {
+        throw new Error(`Assignee actor not found: ${input.assigneeActorId}`);
+      }
+      assigneeActorId = assigneeActor.id;
+    }
+
+    // createdBy is required - look up the actor first by id then slug
+    const createdByActor = await this.actorService.getActorByIdOrSlug(input.createdByActorId);
+    if (!createdByActor) {
+      throw new Error(`Creator actor not found: ${input.createdByActorId}`);
+    }
+    const createdByActorId = createdByActor.id;
 
     const task = this.taskRepository.create({
       name: input.name,
       description: input.description,
-      assignee: input.assignee ?? null,
+      assigneeActorId,
       sessionId: input.sessionId ?? null,
       status: TaskStatus.NOT_STARTED,
-      createdBy: input.createdBy,
+      createdByActorId,
     });
 
     const savedTask = await this.taskRepository.save(task);
@@ -90,7 +114,7 @@ export class TaskerooService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: savedTask.id },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -115,7 +139,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -125,9 +149,21 @@ export class TaskerooService {
     // Apply partial updates
     if (input.name !== undefined) task.name = input.name;
     if (input.description !== undefined) task.description = input.description;
-    if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
     if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
-    if (input.createdBy !== undefined) task.createdBy = input.createdBy;
+
+    // Look up actor IDs from slugs for assignee and createdBy
+    if (input.assigneeActorId !== undefined) {
+      if (input.assigneeActorId === null) {
+        task.assigneeActorId = null; // defined but null means they're removing assignee
+      } else {
+        const assigneeActor = await this.actorService.getActorByIdOrSlug(input.assigneeActorId);
+        if (assigneeActor) {
+          task.assigneeActorId = assigneeActor.id;
+        } else {
+          // TODO: Assignee doesn't exist. Should we throw?
+        }
+      }
+    }
 
     // Handle tags if provided
     if (input.tagNames !== undefined) {
@@ -158,7 +194,7 @@ export class TaskerooService {
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -178,34 +214,49 @@ export class TaskerooService {
     this.logger.log({
       message: 'Assigning task',
       taskId,
-      assignee: input.assignee,
+      assigneeActorId: input.assigneeActorId,
       sessionId: input.sessionId,
     });
 
+    this.logger.debug(`finding task ${taskId}`);
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
-
     if (!task) {
+      this.logger.debug(`task ${taskId} not found`);
       throw new TaskNotFoundError(taskId);
     }
+    this.logger.debug(`task ${taskId} found`);
 
-    task.assignee = input.assignee || null;
+    // Update assignee
+    task.assigneeActorId = input.assigneeActorId;
+    task.assigneeActor = undefined;
+
+    // Update session if any
     if (input.sessionId !== undefined) {
       task.sessionId = input.sessionId || null;
     }
+    this.logger.debug(`task ready to save:`, task)
     const assignedTask = await this.taskRepository.save(task);
+    this.logger.debug(`saved task: ${assignedTask}`);
+
+    // Reload with relations
+    const taskWithRelations = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+    });
+    this.logger.debug(`task from db`, taskWithRelations);
 
     this.logger.log({
       message: 'Task assigned',
       taskId: assignedTask.id,
-      assignee: assignedTask.assignee,
+      assignee: taskWithRelations?.assignee,
       sessionId: assignedTask.sessionId,
     });
 
-    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(assignedTask));
-    return this.mapTaskToResult(assignedTask);
+    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(taskWithRelations!));
+    return this.mapTaskToResult(taskWithRelations!);
   }
 
   async deleteTask(taskId: string): Promise<void> {
@@ -245,12 +296,15 @@ export class TaskerooService {
       const queryBuilder = this.taskRepository
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.comments', 'comments')
+        .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
         .leftJoinAndSelect('task.tags', 'tags')
+        .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
+        .leftJoinAndSelect('task.createdByActor', 'createdByActor')
         .innerJoin('task.tags', 'filterTag')
         .where('filterTag.name = :tagName', { tagName: input.tag });
 
       if (input.assignee) {
-        queryBuilder.andWhere('task.assignee = :assignee', { assignee: input.assignee });
+        queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
       }
       if (input.sessionId) {
         queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
@@ -278,22 +332,29 @@ export class TaskerooService {
       };
     }
 
-    // Standard filtering without tags
-    const where: any = {};
+    // Standard filtering - need to use query builder for assignee filtering by slug
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.comments', 'comments')
+      .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
+      .leftJoinAndSelect('task.tags', 'tags')
+      .leftJoinAndSelect('task.dependsOn', 'dependsOn')
+      .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+
     if (input.assignee) {
-      where.assignee = input.assignee;
+      queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
     }
     if (input.sessionId) {
-      where.sessionId = input.sessionId;
+      queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
     }
 
-    const [tasks, total] = await this.taskRepository.findAndCount({
-      where,
-      relations: ['comments', 'tags', 'dependsOn'],
-      order: { updatedAt: 'DESC' },
-      skip,
-      take: input.limit,
-    });
+    queryBuilder
+      .orderBy('task.updatedAt', 'DESC')
+      .skip(skip)
+      .take(input.limit);
+
+    const [tasks, total] = await queryBuilder.getManyAndCount();
 
     this.logger.log({
       message: 'Tasks listed',
@@ -313,7 +374,7 @@ export class TaskerooService {
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -327,7 +388,6 @@ export class TaskerooService {
     this.logger.log({
       message: 'Adding comment',
       taskId,
-      commenterName: input.commenterName,
     });
 
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
@@ -338,11 +398,17 @@ export class TaskerooService {
 
     const comment = this.commentRepository.create({
       task,
-      commenterName: input.commenterName,
+      commenterActorId: input.commenterActorId,
       content: input.content,
     });
 
     const savedComment = await this.commentRepository.save(comment);
+
+    // Reload with actor relation
+    const commentWithRelations = await this.commentRepository.findOne({
+      where: { id: savedComment.id },
+      relations: ['commenterActor', 'task'],
+    });
 
     this.logger.log({
       message: 'Comment added',
@@ -350,8 +416,8 @@ export class TaskerooService {
       taskId,
     });
 
-    this.eventEmitter.emit('comment.added', new CommentAddedEvent(savedComment));
-    return this.mapCommentToResult(savedComment);
+    this.eventEmitter.emit('comment.added', new CommentAddedEvent(commentWithRelations!));
+    return this.mapCommentToResult(commentWithRelations!);
   }
 
   async changeStatus(taskId: string, input: ChangeStatusInput): Promise<TaskResult> {
@@ -363,7 +429,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -371,7 +437,7 @@ export class TaskerooService {
     }
 
     // Validate status transition rules
-    if (input.status === TaskStatus.IN_PROGRESS && !task.assignee) {
+    if (input.status === TaskStatus.IN_PROGRESS && !task.assigneeActorId) {
       throw new InvalidStatusTransitionError(
         task.status,
         input.status,
@@ -392,7 +458,7 @@ export class TaskerooService {
       await this.commentRepository.save(
         this.commentRepository.create({
           task,
-          commenterName: task.assignee || 'System',
+          commenterActorId: task.assigneeActorId,
           content: input.comment,
         }),
       );
@@ -404,7 +470,7 @@ export class TaskerooService {
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -463,7 +529,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -500,7 +566,7 @@ export class TaskerooService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -520,7 +586,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -542,7 +608,7 @@ export class TaskerooService {
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -631,16 +697,21 @@ export class TaskerooService {
   }
 
   private mapTaskToResult(task: TaskEntity): TaskResult {
+    if (!task.createdByActor) {
+      throw new Error(`Task ${task.id} is missing createdByActor relation`);
+    }
+
     return {
       id: task.id,
       name: task.name,
       description: task.description,
       status: task.status,
       assignee: task.assignee,
+      assigneeActor: task.assigneeActor ? this.mapActorToResult(task.assigneeActor) : null,
       sessionId: task.sessionId,
       comments: task.comments.map((c) => this.mapCommentToResult(c)),
       tags: (task.tags || []).map((t) => this.mapTagToResult(t)),
-      createdBy: task.createdBy,
+      createdByActor: this.mapActorToResult(task.createdByActor),
       dependsOnIds: (task.dependsOn || []).map((t) => t.id),
       rowVersion: task.rowVersion,
       createdAt: task.createdAt,
@@ -654,8 +725,19 @@ export class TaskerooService {
       id: comment.id,
       taskId: comment.taskId,
       commenterName: comment.commenterName,
+      commenterActor: comment.commenterActor ? this.mapActorToResult(comment.commenterActor) : null,
       content: comment.content,
       createdAt: comment.createdAt,
+    };
+  }
+
+  private mapActorToResult(actor: ActorEntity): ActorResult {
+    return {
+      id: actor.id,
+      type: actor.type,
+      slug: actor.slug,
+      displayName: actor.displayName,
+      avatarUrl: actor.avatarUrl,
     };
   }
 
