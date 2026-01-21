@@ -5717,7 +5717,7 @@
         "properties": {
           "assignedToActorId": {
             "type": "string",
-            "description": "ID of the actor assigned to answer the question",
+            "description": "ID of the actor assigned to answer the question. Defaults to task creator if not provided.",
             "example": "123e4567-e89b-12d3-a456-426614174003"
           },
           "question": {
@@ -5727,7 +5727,6 @@
           }
         },
         "required": [
-          "assignedToActorId",
           "question"
         ]
       },
