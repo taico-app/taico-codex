@@ -123,8 +123,10 @@
   min-width: 60px;
   text-decoration: none;
   color: var(--text-muted);
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, border-bottom-color 0.15s ease;
   border-radius: var(--r-2);
+  border-bottom: 2px solid transparent;
+  position: relative;
 }
 
 .ios-shell__bottom-nav__item:hover {
@@ -134,6 +136,7 @@
 
 .ios-shell__bottom-nav__item--active {
   color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .ios-shell__bottom-nav__icon {
@@ -244,8 +247,8 @@
 }
 
 .ios-shell__drawer-item--active {
-  background-color: var(--surface);
-  color: var(--accent);
+  background-color: var(--accent);
+  color: var(--accent-contrast);
   font-weight: var(--fw-medium);
 }
 
