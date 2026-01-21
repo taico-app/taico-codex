@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useTasks } from "./useTasks"; // your abstraction hook
+import { TaskActivityItem, useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
 import { CommentResponseDto, CreateTaskDto, TaskResponseDto } from "shared";
@@ -41,6 +41,7 @@ export type TasksContextValue = {
   // Global animation state (for mobile "all" view)
   globalEnteringIds: Set<string>;
   globalExitingTasks: Task[];
+  activityByTaskId: Record<string, TaskActivityItem>;
 };
 
 const TasksContext = createContext<TasksContextValue | null>(null);
@@ -58,7 +59,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask } = useTasks();
+  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Refs for synchronous computation
@@ -191,6 +192,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       animationByStatus,
       globalEnteringIds,
       globalExitingTasks,
+      activityByTaskId,
     };
   }, [
     tasks,
@@ -206,6 +208,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     animationByStatus,
     globalEnteringIds,
     globalExitingTasks,
+    activityByTaskId,
   ]);
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

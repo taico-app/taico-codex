@@ -1,9 +1,11 @@
 import 'dotenv/config';
-import { TaskEntity } from "../../backend/src/tasks/task.entity";
-import { AgentApiClient } from "./api";
-import { assignHandler } from "./assignHandler";
-import { TasksListener } from "./ws";
-import { BASE_URL } from "./config";
+import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
+import { AgentApiClient } from "./AgentApi.js";
+import { assignHandler } from "./assignHandler.js";
+import { TasksListener } from "./ws.js";
+import { BASE_URL } from "./helpers/config.js";
+import { ClaudeAgentRunner } from './runners/ClaudeAgentRunner.js';
+
 
 /*
 What triggers a run?
@@ -15,7 +17,7 @@ What triggers a run?
 
 const agentApiClient = new AgentApiClient(BASE_URL);
 
-async function processTask(task: TaskEntity) {
+async function processTask(task: TaskEntity, loopBack: (message: string) => void) {
   try {
 
     // Task must be assigned
@@ -42,7 +44,12 @@ async function processTask(task: TaskEntity) {
     }
 
     console.log("GET TO WORK MOTHERFUCKER!");
-    assignHandler(task.id, agent, "https://github.com/galarzafrancisco/ai-monorepo.git");
+    assignHandler({
+      taskId: task.id,
+      agent: agent,
+      repo: "https://github.com/galarzafrancisco/ai-monorepo.git",
+      messageHandler: loopBack
+    });
 
   } catch(error) {
     console.error(`Error processing event`, error);
@@ -52,8 +59,8 @@ async function processTask(task: TaskEntity) {
 // Connects to the backend
 const listener = new TasksListener(
   BASE_URL,
-  (task: TaskEntity) => {
+  (task: TaskEntity, loopBack) => {
     console.log("🔔 task trigger received");
-    processTask(task);
+    processTask(task, loopBack);
   }
 )

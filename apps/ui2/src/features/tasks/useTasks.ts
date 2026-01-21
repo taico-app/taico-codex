@@ -13,6 +13,19 @@ import { CreateTaskDto, AssignTaskDto } from 'shared';
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 
+
+type TaskActivityEvent = {
+  taskId: string;
+  message: string;
+  ts?: string; // optional if server provides
+};
+
+export type TaskActivityItem = {
+  message: string;
+  ts: number;
+};
+
+
 export const useTasks = () => {
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -25,16 +38,32 @@ export const useTasks = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Ephemeral UI state: last activity per task
+  const [activityByTaskId, setActivityByTaskId] = useState<Record<string, TaskActivityItem>>({});
+
+  const upsertActivity = (evt: TaskActivityEvent) => {
+    setActivityByTaskId(prev => ({
+      ...prev,
+      [evt.taskId]: {
+        message: evt.message,
+        ts: evt.ts ? new Date(evt.ts).getTime() : Date.now(),
+      }
+    }));
+  };
+
+  // Optional: clear activity when task changes / gets refreshed
+  const clearActivity = (taskId: string) => {
+    setActivityByTaskId(prev => {
+      const { [taskId]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+  
   // Boot
   useEffect(() => {
     loadTasks();
-    setupWebsocket();
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
+    const cleanup = setupWebsocket();
+    return cleanup;
   }, []);
 
   // Sort tasks by updatedAt (newest first)
@@ -52,7 +81,7 @@ export const useTasks = () => {
   }
 
   // Delete tasl
-  const deleteTask = async({taskId}: {taskId: string}) => {
+  const deleteTask = async ({ taskId }: { taskId: string }) => {
     return await TasksService.tasksControllerDeleteTask(taskId);
   }
 
@@ -165,6 +194,11 @@ export const useTasks = () => {
       );
     });
 
+    newSocket.on('task.activity', (evt: { taskId: string, message: string }) => {
+      // Need to pipe this to my component
+      upsertActivity(evt);
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -176,6 +210,7 @@ export const useTasks = () => {
     // UI feedback
     isLoading,
     error,
+    activityByTaskId,
 
     // Data
     tasks,
@@ -183,6 +218,7 @@ export const useTasks = () => {
     deleteTask,
     addComment,
     assignTask,
+    
 
     // Transport
     isConnected,

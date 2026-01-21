@@ -48,9 +48,11 @@
 
 .board-card__leading {
   display: flex;
-  flex-direction: column; /* stack if you pass multiple items */
+  flex-direction: column;
+  /* stack if you pass multiple items */
   gap: 6px;
-  padding-top: 2px; /* optical alignment */
+  padding-top: 2px;
+  /* optical alignment */
 }
 
 .board-card__headerRight {
@@ -89,6 +91,8 @@
 
 /* footer */
 .board-card__footer {
+  position: relative;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,6 +104,91 @@
 
   min-width: 0;
 }
+
+
+/* overlay sweep line */
+.board-card__footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  /* align with your divider */
+  top: -2px;
+
+  /* thickness */
+  height: 3px;
+
+  /* feathered "light pass" */
+background: linear-gradient(
+  90deg,
+  transparent 0%,
+  rgba(0, 0, 0, 0) 34%,
+
+  /* start hot zone */
+  color-mix(in srgb, var(--accent) 55%, transparent) 44%,
+  color-mix(in srgb, var(--accent) 55%, transparent) 56%,
+  /* end hot zone */
+
+  rgba(0, 0, 0, 0) 66%,
+  transparent 100%
+);  /* if you want to avoid color-mix entirely, see Option B below */
+  opacity: 0;
+  transform: translateX(-120%);
+  pointer-events: none;
+
+  /* soften the bar so it blends with divider */
+  filter: blur(0.12px);
+}
+
+
+/* trigger */
+.board-card--eventPulse .board-card__footer::before {
+  animation: board-card-divider-sweep 1000ms ease-out;
+}
+
+@keyframes board-card-divider-sweep {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-card--eventPulse .board-card__footer::before {
+    animation: none;
+    opacity: 0;
+  }
+}
+/* 
+@keyframes board-card-divider-sweep {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  65% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+} */
 
 /* reuse your existing chip styles as-is */
 .chip {
@@ -116,13 +205,40 @@
 }
 
 /* chip variants (same as your row) */
-.chip--gray   { --chip-bg: rgba(142, 142, 147, 0.14); --chip-fg: var(--text-muted); }
-.chip--blue   { --chip-bg: rgba(0, 122, 255, 0.14);   --chip-fg: rgb(0, 122, 255); }
-.chip--green  { --chip-bg: rgba(52, 199, 89, 0.14);   --chip-fg: rgb(52, 199, 89); }
-.chip--yellow { --chip-bg: rgba(255, 204, 0, 0.18);   --chip-fg: rgb(163, 128, 0); }
-.chip--orange { --chip-bg: rgba(255, 149, 0, 0.16);   --chip-fg: rgb(255, 149, 0); }
-.chip--red    { --chip-bg: rgba(255, 59, 48, 0.14);   --chip-fg: rgb(255, 59, 48); }
-.chip--purple { --chip-bg: rgba(175, 82, 222, 0.14);  --chip-fg: rgb(175, 82, 222); }
+.chip--gray {
+  --chip-bg: rgba(142, 142, 147, 0.14);
+  --chip-fg: var(--text-muted);
+}
+
+.chip--blue {
+  --chip-bg: rgba(0, 122, 255, 0.14);
+  --chip-fg: rgb(0, 122, 255);
+}
+
+.chip--green {
+  --chip-bg: rgba(52, 199, 89, 0.14);
+  --chip-fg: rgb(52, 199, 89);
+}
+
+.chip--yellow {
+  --chip-bg: rgba(255, 204, 0, 0.18);
+  --chip-fg: rgb(163, 128, 0);
+}
+
+.chip--orange {
+  --chip-bg: rgba(255, 149, 0, 0.16);
+  --chip-fg: rgb(255, 149, 0);
+}
+
+.chip--red {
+  --chip-bg: rgba(255, 59, 48, 0.14);
+  --chip-fg: rgb(255, 59, 48);
+}
+
+.chip--purple {
+  --chip-bg: rgba(175, 82, 222, 0.14);
+  --chip-fg: rgb(175, 82, 222);
+}
 
 /* useful utility */
 .truncate {
@@ -143,7 +259,7 @@
   animation: board-card-enter 500ms ease-out forwards;
 }
 
-.board-card--entering > * {
+.board-card--entering>* {
   overflow: hidden;
 }
 
@@ -152,10 +268,12 @@
     grid-template-rows: 0fr;
     opacity: 0;
   }
+
   50% {
     grid-template-rows: 1fr;
     opacity: 0;
   }
+
   100% {
     grid-template-rows: 1fr;
     opacity: 1;
@@ -170,7 +288,7 @@
   pointer-events: none;
 }
 
-.board-card--exiting > * {
+.board-card--exiting>* {
   overflow: hidden;
 }
 
@@ -179,10 +297,12 @@
     grid-template-rows: 1fr;
     opacity: 1;
   }
+
   50% {
     grid-template-rows: 1fr;
     opacity: 0;
   }
+
   100% {
     grid-template-rows: 0fr;
     opacity: 0;

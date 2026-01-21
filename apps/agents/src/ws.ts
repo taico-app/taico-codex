@@ -10,10 +10,10 @@ We'll start easy using the existing websocket endpoints for tasks and see what w
 */
 
 import { io, Socket } from "socket.io-client";
-import { TaskEntity } from "../../backend/src/tasks/task.entity";
-import { ACCESS_TOKEN } from "./config";
+import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
+import { ACCESS_TOKEN } from "./helpers/config.js";
 
-type TaskHandler = (task: TaskEntity) => void;
+type TaskHandler = (task: TaskEntity, loopBack: (message: string) => void) => void;
 
 export class TasksListener {
   private socket: Socket;
@@ -55,17 +55,17 @@ export class TasksListener {
 
     this.socket.on("task.created", (task: TaskEntity) => {
       console.log("[task.created]");
-      this.onTask(task);
+      this.onTask(task, this.postActivity);
     });
 
     this.socket.on("task.assigned", (task: TaskEntity) => {
       console.log("[task.assigned]");
-      this.onTask(task);
+      this.onTask(task, this.postActivity);
     });
 
     this.socket.on("task.status_changed", (task: TaskEntity) => {
       console.log("[task.status_changed]");
-      this.onTask(task);
+      this.onTask(task, this.postActivity);
     });
 
     // ---- events we ignore (for now) ----
@@ -81,6 +81,14 @@ export class TasksListener {
     this.socket.on("task.commented", () => {
       console.log("[task.commented] ignored");
     });
+  }
+
+  postActivity(taskId: string, kind?: string, message?: string) {
+    this.socket.emit(
+      'task.activity.post',
+      { taskId, kind, message },
+      (ack: any) => console.log('[task.activity.post] ack:', ack),
+    );
   }
 
   close() {

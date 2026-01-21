@@ -1,10 +1,11 @@
 // agentApiClient.ts
+import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
 
-import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto";
-import { ACCESS_TOKEN } from "./config";
-
-export class AgentApiClient {
-  constructor(private readonly baseUrl: string) {}
+export class AgentApi {
+  constructor(
+    private readonly baseUrl: string,
+    private readonly accessToken: string,
+  ) {}
 
   private agentUrl(agentSlug: string) {
     return `${this.baseUrl}/api/v1/agents/${encodeURIComponent(agentSlug)}`;
@@ -15,7 +16,7 @@ export class AgentApiClient {
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { accept: "application/json", authorization: `Bearer ${ACCESS_TOKEN}` },
+      headers: { accept: "application/json", authorization: `Bearer ${this.accessToken}` },
     });
 
     

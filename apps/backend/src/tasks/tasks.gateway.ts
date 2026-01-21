@@ -6,6 +6,7 @@ import {
   SubscribeMessage,
   ConnectedSocket,
   OnGatewayInit,
+  MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
@@ -24,8 +25,14 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { TasksScopes } from './tasks.scopes';
 
 
-const Tasks_ROOM = 'Tasks';
+const TASKS_ROOM = 'tasks';
 
+type TaskActivityPayload = {
+  taskId: string;
+  kind?: string;
+  message: string;
+  ts: number;
+};
 
 /**
  * WebSocket gateway for Tasks domain.
@@ -56,56 +63,79 @@ export class TasksGateway
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
-  
+
   /*
    * Room implementation
    */
 
   @SubscribeMessage('tasks.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
-    client.join(Tasks_ROOM);
-    return { ok: true, room: Tasks_ROOM };
+    client.join(TASKS_ROOM);
+    return { ok: true, room: TASKS_ROOM };
   }
 
   @SubscribeMessage('tasks.unsubscribe')
   unsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave(Tasks_ROOM);
+    client.leave(TASKS_ROOM);
     return { ok: true };
   }
 
   // TODO: implement (Tasks.snapshot) to send current state of tasks to the client
 
   @OnEvent('task.created')
-  onTaskCreated(event: TaskCreatedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.created', event.task);
-  }
-  @OnEvent('task.created')
   handleTaskCreated(event: TaskCreatedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.created', event.task);
+    this.server.to(TASKS_ROOM).emit('task.created', event.task);
   }
 
   @OnEvent('task.updated')
   handleTaskUpdated(event: TaskUpdatedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.updated', event.task);
+    this.server.to(TASKS_ROOM).emit('task.updated', event.task);
   }
 
   @OnEvent('task.deleted')
   handleTaskDeleted(event: TaskDeletedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.deleted', { taskId: event.taskId });
+    this.server.to(TASKS_ROOM).emit('task.deleted', { taskId: event.taskId });
   }
 
   @OnEvent('task.assigned')
   handleTaskAssigned(event: TaskAssignedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.assigned', event.task);
+    this.server.to(TASKS_ROOM).emit('task.assigned', event.task);
   }
 
   @OnEvent('comment.added')
   handleCommentAdded(event: CommentAddedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.commented', event.comment);
+    this.server.to(TASKS_ROOM).emit('task.commented', event.comment);
   }
 
   @OnEvent('task.statusChanged')
   handleStatusChanged(event: TaskStatusChangedEvent) {
-    this.server.to(Tasks_ROOM).emit('task.status_changed', event.task);
+    this.server.to(TASKS_ROOM).emit('task.status_changed', event.task);
+  }
+
+
+  // Listen to incoming messages
+  @SubscribeMessage('task.activity.post')
+  postTaskActivity(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: TaskActivityPayload,
+  ) {
+    
+    // ultra-MVP "validation"
+    if (!body?.taskId) return { ok: false, error: 'taskId required' };
+    
+    const event = {
+      taskId: body.taskId,
+      kind: body.kind ?? 'worker.activity',
+      message: body.message,
+      ts: body.ts ?? Date.now(),
+      by: client.id, // optional: useful for debugging
+    };
+    
+    this.logger.log(event);
+
+    // broadcast to everyone (including the sender)
+    this.server.to(TASKS_ROOM).emit('task.activity', event);
+
+    return { ok: true };
   }
 }
