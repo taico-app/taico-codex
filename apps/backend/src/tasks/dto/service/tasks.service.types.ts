@@ -63,7 +63,7 @@ export type CreateTagInput = {
 export type CreateInputRequestInput = {
   taskId: string;
   askedByActorId: string;
-  assignedToActorId: string;
+  assignedToActorId?: string;
   question: string;
 };
 

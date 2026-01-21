@@ -371,6 +371,33 @@ export class TasksMcpGateway {
       }
     )
 
+    canWrite && server.registerTool(
+      'ask_for_input',
+      {
+        title: 'Ask for input from user',
+        description: 'Use this tool when you need input from a user. This is the ONLY way for headless agents to communicate with users. Provide the taskId, your question, and optionally the actorId of who to ask (defaults to task creator if not provided).',
+        inputSchema: {
+          taskId: z.string(),
+          question: z.string(),
+          actorId: z.string().optional(),
+        },
+      },
+      async ({ taskId, question, actorId }) => {
+        const inputRequest = await this.TasksService.createInputRequest({
+          taskId,
+          askedByActorId: user.actorId,
+          assignedToActorId: actorId,
+          question,
+        });
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(inputRequest),
+          }],
+        }
+      }
+    )
+
     return server;
   }
 

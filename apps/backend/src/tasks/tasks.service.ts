@@ -673,10 +673,23 @@ export class TasksService {
       assignedToActorId: input.assignedToActorId,
     });
 
+    // Get task to find creator if assignedToActorId is not provided
+    const task = await this.taskRepository.findOne({
+      where: { id: input.taskId },
+      relations: ['createdByActor'],
+    });
+
+    if (!task) {
+      throw new TaskNotFoundError(input.taskId);
+    }
+
+    // Default to task creator if assignedToActorId is not provided
+    const assignedToActorId = input.assignedToActorId ?? task.createdByActorId;
+
     const inputRequest = this.inputRequestRepository.create({
       taskId: input.taskId,
       askedByActorId: input.askedByActorId,
-      assignedToActorId: input.assignedToActorId,
+      assignedToActorId: assignedToActorId,
       question: input.question,
       answer: null,
       resolvedAt: null,
@@ -689,6 +702,7 @@ export class TasksService {
         message: 'Input request created',
         inputRequestId: savedInputRequest.id,
         taskId: input.taskId,
+        assignedToActorId: assignedToActorId,
       });
 
       return this.mapInputRequestToResult(savedInputRequest);
@@ -698,14 +712,6 @@ export class TasksService {
         message: 'Input request creation failed, checking entities',
         error: error.message,
       });
-
-      // Check if task exists
-      const task = await this.taskRepository.findOne({
-        where: { id: input.taskId },
-      });
-      if (!task) {
-        throw new TaskNotFoundError(input.taskId);
-      }
 
       // Check if askedBy actor exists
       const askedByActor = await this.actorRepository.findOne({
@@ -717,10 +723,10 @@ export class TasksService {
 
       // Check if assignedTo actor exists
       const assignedToActor = await this.actorRepository.findOne({
-        where: { id: input.assignedToActorId },
+        where: { id: assignedToActorId },
       });
       if (!assignedToActor) {
-        throw new ActorNotFoundError(input.assignedToActorId);
+        throw new ActorNotFoundError(assignedToActorId);
       }
 
       // If all entities exist but save still failed, rethrow the original error
