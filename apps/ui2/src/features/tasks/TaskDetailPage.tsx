@@ -35,7 +35,7 @@ export function TaskDetailPage() {
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
 
-  const saveNewComment = async({content}: {content: string}): Promise<boolean> => {
+  const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
       return false;
     }
@@ -228,14 +228,14 @@ export function TaskDetailPage() {
       </DataRowContainer>
 
       {/* Floating comment button */}
-      <button
+      <Button
         className="task-detail-fab"
-        type="button"
         onClick={() => setShowNewCommentPop(true)}
-        aria-label="Add comment"
+        variant='primary'
+        size='lg'
       >
         Add Comment
-      </button>
+      </Button>
 
       {/* Assign */}
       {!task.assigneeActor && (
@@ -255,7 +255,7 @@ export function TaskDetailPage() {
           size='lg'
           variant='danger'
           onClick={async () => {
-            await deleteTask({taskId: task.id});
+            await deleteTask({ taskId: task.id });
             navigate('/tasks');
           }}
         >
