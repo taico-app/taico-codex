@@ -60,6 +60,17 @@ export type CreateTagInput = {
   color?: string;
 };
 
+export type CreateInputRequestInput = {
+  taskId: string;
+  askedByActorId: string;
+  assignedToActorId: string;
+  question: string;
+};
+
+export type AnswerInputRequestInput = {
+  answer: string;
+};
+
 // Result types (from service methods)
 export type TagResult = {
   id: string;
@@ -78,6 +89,7 @@ export type TaskResult = {
   assigneeActor: ActorResult | null;
   sessionId: string | null;
   comments: CommentResult[];
+  inputRequests: InputRequestResult[];
   tags: TagResult[];
   createdByActor: ActorResult;
   dependsOnIds: string[];
@@ -94,6 +106,18 @@ export type CommentResult = {
   commenterActor: ActorResult | null;
   content: string;
   createdAt: Date;
+};
+
+export type InputRequestResult = {
+  id: string;
+  taskId: string;
+  askedByActorId: string;
+  assignedToActorId: string;
+  question: string;
+  answer: string | null;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type ListTasksResult = {

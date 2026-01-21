@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
+import { InputRequestResponseDto } from './input-request-response.dto';
 import { TagResponseDto } from './tag-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
@@ -56,6 +57,12 @@ export class TaskResponseDto {
     type: () => [CommentResponseDto],
   })
   comments!: CommentResponseDto[];
+
+  @ApiProperty({
+    description: 'Input requests associated with the task',
+    type: () => [InputRequestResponseDto],
+  })
+  inputRequests!: InputRequestResponseDto[];
 
   @ApiProperty({
     description: 'Tags associated with the task',

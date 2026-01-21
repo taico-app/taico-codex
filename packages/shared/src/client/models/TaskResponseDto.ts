@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { ActorResponseDto } from './ActorResponseDto';
 import type { CommentResponseDto } from './CommentResponseDto';
+import type { InputRequestResponseDto } from './InputRequestResponseDto';
 import type { TagResponseDto } from './TagResponseDto';
 export type TaskResponseDto = {
     /**
@@ -38,6 +39,10 @@ export type TaskResponseDto = {
      * Comments associated with the task
      */
     comments: Array<CommentResponseDto>;
+    /**
+     * Input requests associated with the task
+     */
+    inputRequests: Array<InputRequestResponseDto>;
     /**
      * Tags associated with the task
      */

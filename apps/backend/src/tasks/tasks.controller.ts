@@ -33,13 +33,16 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { ChangeTaskStatusDto } from './dto/change-task-status.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
+import { InputRequestResponseDto } from './dto/input-request-response.dto';
+import { CreateInputRequestDto } from './dto/create-input-request.dto';
+import { AnswerInputRequestDto } from './dto/answer-input-request.dto';
 import { TagResponseDto } from './dto/tag-response.dto';
 import { AddTagDto } from './dto/add-tag.dto';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
-import { TaskResult, CommentResult, TagResult, ActorResult } from './dto/service/tasks.service.types';
+import { TaskResult, CommentResult, TagResult, ActorResult, InputRequestResult } from './dto/service/tasks.service.types';
 import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { TasksMcpGateway } from './tasks.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
@@ -290,6 +293,53 @@ export class TasksController {
     await this.TasksService.deleteTag(tagId);
   }
 
+  @Post(':id/input-requests')
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({ summary: 'Create an input request for a task' })
+  @ApiCreatedResponse({
+    type: InputRequestResponseDto,
+    description: 'Input request created successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async createInputRequest(
+    @Param() params: TaskParamsDto,
+    @Body() dto: CreateInputRequestDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<InputRequestResponseDto> {
+    const result = await this.TasksService.createInputRequest({
+      taskId: params.id,
+      askedByActorId: user.actorId,
+      assignedToActorId: dto.assignedToActorId,
+      question: dto.question,
+    });
+    return this.mapInputRequestResultToResponse(result);
+  }
+
+  @Post(':id/input-requests/:inputRequestId/answer')
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({ summary: 'Answer an input request' })
+  @ApiOkResponse({
+    type: InputRequestResponseDto,
+    description: 'Input request answered successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Input request not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async answerInputRequest(
+    @Param('id') taskId: string,
+    @Param('inputRequestId') inputRequestId: string,
+    @Body() dto: AnswerInputRequestDto,
+  ): Promise<InputRequestResponseDto> {
+    const result = await this.TasksService.answerInputRequest(
+      taskId,
+      inputRequestId,
+      {
+        answer: dto.answer,
+      },
+    );
+    return this.mapInputRequestResultToResponse(result);
+  }
+
   private mapResultToResponse(result: TaskResult): TaskResponseDto {
     return {
       id: result.id,
@@ -300,6 +350,7 @@ export class TasksController {
       assigneeActor: result.assigneeActor ? this.mapActorResultToResponse(result.assigneeActor) : null,
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
+      inputRequests: result.inputRequests.map((ir) => this.mapInputRequestResultToResponse(ir)),
       tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
       createdByActor: this.mapActorResultToResponse(result.createdByActor),
       dependsOnIds: result.dependsOnIds,
@@ -346,6 +397,20 @@ export class TasksController {
     return {
       name: result.name,
       color: result.color,
+    };
+  }
+
+  private mapInputRequestResultToResponse(result: InputRequestResult): InputRequestResponseDto {
+    return {
+      id: result.id,
+      taskId: result.taskId,
+      askedByActorId: result.askedByActorId,
+      assignedToActorId: result.assignedToActorId,
+      question: result.question,
+      answer: result.answer,
+      resolvedAt: result.resolvedAt ? result.resolvedAt.toISOString() : null,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
     };
   }
 }

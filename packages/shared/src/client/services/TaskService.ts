@@ -3,12 +3,15 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddTagDto } from '../models/AddTagDto';
+import type { AnswerInputRequestDto } from '../models/AnswerInputRequestDto';
 import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
+import type { CreateInputRequestDto } from '../models/CreateInputRequestDto';
 import type { CreateTagDto } from '../models/CreateTagDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
+import type { InputRequestResponseDto } from '../models/InputRequestResponseDto';
 import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
@@ -300,6 +303,59 @@ export class TaskService {
             },
             errors: {
                 404: `Tag not found`,
+            },
+        });
+    }
+    /**
+     * Create an input request for a task
+     * @param id Task UUID
+     * @param requestBody
+     * @returns InputRequestResponseDto Input request created successfully
+     * @throws ApiError
+     */
+    public static tasksControllerCreateInputRequest(
+        id: string,
+        requestBody: CreateInputRequestDto,
+    ): CancelablePromise<InputRequestResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/tasks/tasks/{id}/input-requests',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Answer an input request
+     * @param id
+     * @param inputRequestId
+     * @param requestBody
+     * @returns InputRequestResponseDto Input request answered successfully
+     * @throws ApiError
+     */
+    public static tasksControllerAnswerInputRequest(
+        id: string,
+        inputRequestId: string,
+        requestBody: AnswerInputRequestDto,
+    ): CancelablePromise<InputRequestResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/tasks/tasks/{id}/input-requests/{inputRequestId}/answer',
+            path: {
+                'id': id,
+                'inputRequestId': inputRequestId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Input request not found`,
             },
         });
     }
