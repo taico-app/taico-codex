@@ -234,7 +234,7 @@ export function TaskDetailPage() {
         onClick={() => setShowNewCommentPop(true)}
         aria-label="Add comment"
       >
-        💬
+        Add Comment
       </button>
 
       {/* Assign */}

@@ -114,18 +114,21 @@
   z-index: 999;
   /* below your pop (9999), above content */
 
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-3);
 
   border: 0;
   background: var(--accent);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 
-  font-size: 24px;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
