@@ -2348,6 +2348,120 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/{id}/input-requests": {
+      "post": {
+        "operationId": "TasksController_createInputRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInputRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Input request created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputRequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create an input request for a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/input-requests/{inputRequestId}/answer": {
+      "post": {
+        "operationId": "TasksController_answerInputRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inputRequestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerInputRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Input request answered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputRequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Input request not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Answer an input request",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/mcp": {
       "get": {
         "operationId": "TasksController_handleMcp_get",
@@ -5248,6 +5362,67 @@
           "createdAt"
         ]
       },
+      "InputRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the input request",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this input request belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "askedByActorId": {
+            "type": "string",
+            "description": "ID of the actor who asked the question",
+            "example": "123e4567-e89b-12d3-a456-426614174002"
+          },
+          "assignedToActorId": {
+            "type": "string",
+            "description": "ID of the actor assigned to answer the question",
+            "example": "123e4567-e89b-12d3-a456-426614174003"
+          },
+          "question": {
+            "type": "string",
+            "description": "The question being asked",
+            "example": "Should we use OAuth or JWT for authentication?"
+          },
+          "answer": {
+            "type": "object",
+            "description": "The answer to the question",
+            "example": "Use JWT with refresh tokens",
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "object",
+            "description": "Timestamp when the question was resolved",
+            "example": "2025-11-03T12:45:00.000Z",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Input request creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Input request last update timestamp",
+            "example": "2025-11-03T12:45:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "askedByActorId",
+          "assignedToActorId",
+          "question",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "TagResponseDto": {
         "type": "object",
         "properties": {
@@ -5323,6 +5498,13 @@
               "$ref": "#/components/schemas/CommentResponseDto"
             }
           },
+          "inputRequests": {
+            "description": "Input requests associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InputRequestResponseDto"
+            }
+          },
           "tags": {
             "description": "Tags associated with the task",
             "type": "array",
@@ -5366,6 +5548,7 @@
           "description",
           "status",
           "comments",
+          "inputRequests",
           "tags",
           "createdByActor",
           "dependsOnIds",
@@ -5527,6 +5710,38 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "CreateInputRequestDto": {
+        "type": "object",
+        "properties": {
+          "assignedToActorId": {
+            "type": "string",
+            "description": "ID of the actor assigned to answer the question",
+            "example": "123e4567-e89b-12d3-a456-426614174003"
+          },
+          "question": {
+            "type": "string",
+            "description": "The question being asked",
+            "example": "Should we use OAuth or JWT for authentication?"
+          }
+        },
+        "required": [
+          "assignedToActorId",
+          "question"
+        ]
+      },
+      "AnswerInputRequestDto": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string",
+            "description": "The answer to the question",
+            "example": "Use JWT with refresh tokens for better security and scalability"
+          }
+        },
+        "required": [
+          "answer"
         ]
       },
       "CreatePageDto": {

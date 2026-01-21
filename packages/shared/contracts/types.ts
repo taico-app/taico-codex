@@ -733,6 +733,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks/tasks/{id}/input-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an input request for a task */
+        post: operations["TasksController_createInputRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/input-requests/{inputRequestId}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer an input request */
+        post: operations["TasksController_answerInputRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/tasks/mcp": {
         parameters: {
             query?: never;
@@ -2220,6 +2254,53 @@ export interface components {
              */
             createdAt: string;
         };
+        InputRequestResponseDto: {
+            /**
+             * @description Unique identifier for the input request
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description ID of the task this input request belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            taskId: string;
+            /**
+             * @description ID of the actor who asked the question
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            askedByActorId: string;
+            /**
+             * @description ID of the actor assigned to answer the question
+             * @example 123e4567-e89b-12d3-a456-426614174003
+             */
+            assignedToActorId: string;
+            /**
+             * @description The question being asked
+             * @example Should we use OAuth or JWT for authentication?
+             */
+            question: string;
+            /**
+             * @description The answer to the question
+             * @example Use JWT with refresh tokens
+             */
+            answer?: Record<string, never> | null;
+            /**
+             * @description Timestamp when the question was resolved
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            resolvedAt?: Record<string, never> | null;
+            /**
+             * @description Input request creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Input request last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
         TagResponseDto: {
             /**
              * @description Name of the tag
@@ -2268,6 +2349,8 @@ export interface components {
             sessionId?: string | null;
             /** @description Comments associated with the task */
             comments: components["schemas"]["CommentResponseDto"][];
+            /** @description Input requests associated with the task */
+            inputRequests: components["schemas"]["InputRequestResponseDto"][];
             /** @description Tags associated with the task */
             tags: components["schemas"]["TagResponseDto"][];
             /** @description Actor who created this task */
@@ -2396,6 +2479,25 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
+        };
+        CreateInputRequestDto: {
+            /**
+             * @description ID of the actor assigned to answer the question
+             * @example 123e4567-e89b-12d3-a456-426614174003
+             */
+            assignedToActorId: string;
+            /**
+             * @description The question being asked
+             * @example Should we use OAuth or JWT for authentication?
+             */
+            question: string;
+        };
+        AnswerInputRequestDto: {
+            /**
+             * @description The answer to the question
+             * @example Use JWT with refresh tokens for better security and scalability
+             */
+            answer: string;
         };
         CreatePageDto: {
             /**
@@ -4734,6 +4836,88 @@ export interface operations {
                 content?: never;
             };
             /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_createInputRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInputRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Input request created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_answerInputRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                inputRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerInputRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Input request answered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InputRequestResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Input request not found */
             404: {
                 headers: {
                     [name: string]: unknown;

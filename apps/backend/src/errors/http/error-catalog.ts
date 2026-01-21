@@ -51,6 +51,18 @@ export const ErrorCatalog: Record<
     type: '/errors/wiki/circular-reference',
     retryable: false,
   },
+  [ErrorCodes.AGENT_NOT_FOUND]: {
+    status: 404,
+    title: 'Agent not found',
+    type: '/errors/agents/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.AGENT_SLUG_CONFLICT]: {
+    status: 409,
+    title: 'Agent slug conflict',
+    type: '/errors/agents/slug-conflict',
+    retryable: false,
+  },
   [ErrorCodes.CLIENT_ALREADY_REGISTERED]: {
     status: 409,
     title: 'Client already registered',

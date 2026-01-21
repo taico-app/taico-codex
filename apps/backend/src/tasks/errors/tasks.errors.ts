@@ -6,6 +6,7 @@ export const TasksErrorCodes = {
   TASK_NOT_ASSIGNED: ErrorCodes.TASK_NOT_ASSIGNED,
   INVALID_STATUS_TRANSITION: ErrorCodes.INVALID_STATUS_TRANSITION,
   COMMENT_REQUIRED: ErrorCodes.COMMENT_REQUIRED,
+  AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
 } as const;
 
 type TasksErrorCode =
@@ -58,5 +59,11 @@ export class CommentRequiredError extends TasksDomainError {
       'A comment is required when marking a task as done.',
       TasksErrorCodes.COMMENT_REQUIRED,
     );
+  }
+}
+
+export class ActorNotFoundError extends TasksDomainError {
+  constructor(actorId: string) {
+    super('Actor not found.', TasksErrorCodes.AGENT_NOT_FOUND, { actorId });
   }
 }

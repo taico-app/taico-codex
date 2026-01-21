@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskEntity } from './task.entity';
 import { CommentEntity } from './comment.entity';
+import { InputRequestEntity } from './input-request.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { TasksGateway } from './tasks.gateway';
@@ -13,7 +14,7 @@ import { MetaModule } from '../meta/meta.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TaskEntity, CommentEntity]),
+    TypeOrmModule.forFeature([TaskEntity, CommentEntity, InputRequestEntity]),
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,
