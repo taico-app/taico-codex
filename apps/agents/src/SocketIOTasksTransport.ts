@@ -36,6 +36,7 @@ export class SocketIOTasksTransport implements TasksTransport {
   private socket?: Socket;
   private handlers: Array<(evt: TaskEvent) => void> = [];
   private started = false;
+  private reconnectAttempts = 0;
 
   constructor(
     private readonly baseUrl: string,
@@ -45,6 +46,11 @@ export class SocketIOTasksTransport implements TasksTransport {
       transports?: Array<"websocket" | "polling">; // default: ["websocket"]
       autoSubscribe?: boolean; // default: true
       debug?: boolean; // default: false
+      reconnection?: boolean; // default: true
+      reconnectionAttempts?: number; // default: Infinity (unlimited)
+      reconnectionDelay?: number; // default: 1000ms
+      reconnectionDelayMax?: number; // default: 5000ms
+      randomizationFactor?: number; // default: 0.5
     }
   ) {}
 
@@ -74,6 +80,11 @@ export class SocketIOTasksTransport implements TasksTransport {
     const namespace = this.options?.namespace ?? "/tasks";
     const transports = this.options?.transports ?? ["websocket"];
     const autoSubscribe = this.options?.autoSubscribe ?? true;
+    const reconnection = this.options?.reconnection ?? true;
+    const reconnectionAttempts = this.options?.reconnectionAttempts ?? Infinity;
+    const reconnectionDelay = this.options?.reconnectionDelay ?? 1000;
+    const reconnectionDelayMax = this.options?.reconnectionDelayMax ?? 5000;
+    const randomizationFactor = this.options?.randomizationFactor ?? 0.5;
 
     const url = `${this.baseUrl}${namespace}`;
     if (this.options?.debug) console.log(`[tasks] connecting to ${url}`);
@@ -81,11 +92,23 @@ export class SocketIOTasksTransport implements TasksTransport {
     this.socket = io(url, {
       transports,
       auth: { token: this.accessToken },
+      reconnection,
+      reconnectionAttempts,
+      reconnectionDelay,
+      reconnectionDelayMax,
+      randomizationFactor,
     });
 
     // ----- lifecycle -----
     this.socket.on("connect", () => {
-      if (this.options?.debug) console.log("[tasks] connected:", this.socket?.id);
+      if (this.reconnectAttempts > 0) {
+        console.log(`[tasks] reconnected after ${this.reconnectAttempts} attempts:`, this.socket?.id);
+      } else {
+        if (this.options?.debug) console.log("[tasks] connected:", this.socket?.id);
+      }
+
+      // Reset reconnect attempts on successful connection
+      this.reconnectAttempts = 0;
 
       if (autoSubscribe) {
         this.socket?.emit("tasks.subscribe", {}, (ack: TasksSocketAck) => {
@@ -96,11 +119,25 @@ export class SocketIOTasksTransport implements TasksTransport {
 
     this.socket.on("disconnect", (reason) => {
       if (this.options?.debug) console.log("[tasks] disconnected:", reason);
+
+      // Only log reconnection info if we're going to try reconnecting
+      if (reconnection && reason !== "io client disconnect") {
+        console.log("[tasks] will attempt to reconnect...");
+      }
     });
 
     this.socket.on("connect_error", (err: any) => {
-      console.error("[tasks] connect_error:", err?.message ?? err);
+      this.reconnectAttempts++;
+      console.error(`[tasks] connect_error (attempt ${this.reconnectAttempts}):`, err?.message ?? err);
       if (this.options?.debug) console.error(err);
+    });
+
+    this.socket.on("reconnect_attempt", (attemptNumber: number) => {
+      if (this.options?.debug) console.log(`[tasks] reconnect_attempt ${attemptNumber}`);
+    });
+
+    this.socket.on("reconnect_failed", () => {
+      console.error("[tasks] reconnect_failed: max reconnection attempts reached");
     });
 
     // ----- events we care about -----
