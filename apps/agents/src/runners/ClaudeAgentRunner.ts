@@ -1,0 +1,51 @@
+// ClaudeAgentRunner.ts
+import { BaseAgentRunner } from "./BaseAgentRunner.js";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
+
+export class ClaudeAgentRunner extends BaseAgentRunner {
+  readonly kind = 'claude';
+
+  private formatter = new ClaudeMessageFormatter();
+
+  protected async runInternal(
+    ctx,
+    emit,
+    setSession
+  ): Promise<string> {
+
+    let finalResult = '';
+    const stream = query({
+      prompt: ctx.prompt,
+      options: {
+        cwd: ctx.cwd,
+        // resume: ctx.resume,
+        persistSession: true,
+        settingSources: ['user', 'project', 'local'],
+        ...(ctx.options ?? {}),
+      },
+    });
+
+    for await (const msg of stream) {
+      console.log(msg)
+      // session capture
+      if (
+        msg?.type === 'system' &&
+        msg?.subtype === 'init' &&
+        typeof msg.session_id === 'string'
+      ) {
+        await setSession(msg.session_id);
+      }
+
+      // map → string
+      const text = this.formatter.format(msg);
+      if (text) await emit(text);
+
+      if (msg.type === 'result' && msg.subtype === 'success') {
+        finalResult = msg.result;
+      }
+    }
+
+    return finalResult;
+  }
+}

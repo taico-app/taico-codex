@@ -1,5 +1,6 @@
 // agentRunner.ts
 import { query, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import { ClaudeMessageFormatter } from "./formatters/ClaudeMessageFormatter.js";
 
 export type AgentRunArgs = {
   prompt: string;
@@ -11,19 +12,15 @@ export type AgentRunArgs = {
   onSession?: (sessionId: string) => void | Promise<void>;
 
   // Called for every message (optional)
-  onEvent?: (msg: SDKMessage) => void | Promise<void>;
+  onEvent?: (msg: string) => void | Promise<void>;
 };
 
-export type AgentRunResult = {
-  sessionId: string | null;
-  events: any[];
-  result: string;
-};
+const formatter = new ClaudeMessageFormatter();
 
 export async function runAgentStream(args: AgentRunArgs): Promise<AgentRunResult> {
 
   let sessionId: string | null = null;
-  const events: any[] = [];
+  const events: string[] = [];
   let result = '';
 
   try {
@@ -39,10 +36,12 @@ export async function runAgentStream(args: AgentRunArgs): Promise<AgentRunResult
 
 
     for await (const msg of stream) {
-      events.push(msg);
-
-      // Emit every event (live)
-      if (args.onEvent) await args.onEvent(msg);
+      const stringMessage = formatter.format(msg);
+      if (stringMessage) {
+        events.push(stringMessage);
+        // Emit every event (live)
+        if (args.onEvent) await args.onEvent(stringMessage);
+      }
 
       // Capture + persist session ASAP
       if (
@@ -61,7 +60,7 @@ export async function runAgentStream(args: AgentRunArgs): Promise<AgentRunResult
     }
 
     return { sessionId, events, result };
-  
+
   } catch (error) {
     console.log('Claude errored');
     return { sessionId, events, result };

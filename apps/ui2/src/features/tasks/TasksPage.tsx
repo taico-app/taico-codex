@@ -14,7 +14,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
 
   const isDesktop = useIsDesktop();
   const statusFilter = isDesktop ? undefined : status;
-  const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks } = useTasksCtx();
+  const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId } = useTasksCtx();
 
   const navigate = useNavigate();
 
@@ -193,7 +193,7 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
   )
 }
 
-function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void }): JSX.Element {
+function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void, pulseKey?: number }): JSX.Element {
   const tags = task.tags.map(tag => ({ label: tag.name }));
   if (task.comments.length) {
     tags.push({
@@ -207,6 +207,7 @@ function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardC
       tags={tags}
       animation={animation}
       onClick={onClick}
+      pulseKey={pulseKey}
       footer={
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
@@ -224,6 +225,8 @@ function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardC
 
 function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
   const navigate = useNavigate();
+  const { activityByTaskId } = useTasksCtx();
+
   // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
   const exitingIdSet = new Set(exitingTasks.map(t => t.id));
 
@@ -237,6 +240,8 @@ function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ent
         const isExiting = exitingIdSet.has(task.id);
         const isEntering = enteringIds.has(task.id);
 
+        const activity = activityByTaskId[task.id];
+
         let animation: BoardCardAnimation | undefined;
         if (isExiting) animation = 'exiting';
         else if (isEntering) animation = 'entering';
@@ -247,6 +252,7 @@ function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ent
             task={task}
             animation={animation}
             onClick={() => navigate(`/tasks/task/${task.id}`)}
+            pulseKey={activity?.ts}
           />
         );
       })}

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import "./BoardCard.css";
 
 export type CardTag = {
@@ -30,6 +30,8 @@ export interface BoardCardProps {
   /** Animation state for enter/exit transitions */
   animation?: BoardCardAnimation;
 
+  pulseKey?: number;
+
   /** Click handler for the row */
   onClick?: () => void;
 
@@ -46,12 +48,25 @@ export function BoardCard({
   animation,
   onClick,
   className = "",
+  pulseKey,
 }: BoardCardProps) {
+
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (pulseKey == null) return;
+
+    setPulse(true);
+    const t = setTimeout(() => setPulse(false), 600); // match CSS duration
+    return () => clearTimeout(t);
+  }, [pulseKey]);
+
   const animationClass = animation ? `board-card--${animation}` : "";
+  const pulseClass = pulse ? "board-card--eventPulse" : "";
 
   return (
     <div className={`board-card__wrapper ${animationClass}`} onClick={onClick}>
-      <div className={`board-card ${className}`} data-component="board-card">
+      <div className={`board-card ${pulseClass} ${className}`} data-component="board-card">
         <div className="board-card__header">
           <div className="board-card__headerLeft">
             {leading ? <div className="board-card__leading">{leading}</div> : null}

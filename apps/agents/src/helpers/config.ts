@@ -1,5 +1,5 @@
-export const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-export const BASE_URL = process.env.BASE_URL;
+export const ACCESS_TOKEN = process.env.ACCESS_TOKEN || '';
+export const BASE_URL = process.env.BASE_URL || '';
 
 if (!ACCESS_TOKEN) {
   console.error('env ACCESS_TOKEN not available');

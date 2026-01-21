@@ -1,15 +1,6 @@
-import { assignHandler } from "./assignHandler";
+import 'dotenv/config';
+import { Coordinator } from "./Coordinator.js";
 
-async function main() {
-  const taskId = 'the-task-id';
-  const agentId = 'claude-dev';
-  const repo = "https://github.com/galarzafrancisco/ai-monorepo.git";
-  const result = await assignHandler(
-    taskId,
-    agentId,
-    repo,
-  )
-  console.log(result);
-}
+const coordinator = new Coordinator();
 
-main();
+await coordinator.start();

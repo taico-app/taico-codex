@@ -8,11 +8,11 @@ Input:
 */
 
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
-import { AgentRunArgs, AgentRunResult, runAgentStream as claudeRun } from "./claude.js";
-import { runAgentStream as opencodeRun } from "./opencode.js";
-import { printClaudeMessage } from "./messagePrinter.js";
-import { getSession, setSession } from "./sessionStore.js";
-import { prepareWorkspace } from "./workspace.js";
+import { runAgentStream as opencodeRun } from "./runners/OpenCodeAgentRunner.js";
+import { AgentRunner } from "./runners/AgentRunner.js";
+import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
+import { getSession, setSession } from "./helpers/sessionStore.js";
+import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 
 /*
 Workflow:
@@ -29,7 +29,13 @@ Session ID exists?
 
 */
 
-export async function assignHandler(taskId: string, agent: AgentResponseDto, repo: string) {
+export type AssignHandlerProps = {
+  taskId: string,
+  agent: AgentResponseDto,
+  repo: string,
+  messageHandler: (message: string) => void | Promise<void>,
+}
+export async function assignHandler({ taskId, agent, repo, messageHandler }) {
 
   const { systemPrompt: prompt, slug: agentId } = agent;
 
@@ -37,11 +43,11 @@ export async function assignHandler(taskId: string, agent: AgentResponseDto, rep
   const sessionId = getSession(agentId, taskId);
 
   const { repoDir } = await prepareWorkspace(taskId, agentId, repo);
-  let runner: (AgentRunArgs) => Promise<AgentRunResult>
+  let runner: AgentRunner;
   if (agent.type === 'claude') {
-    runner = claudeRun;
-  } else if (agent.type === 'opencode') {
-    runner = opencodeRun;
+    runner = new ClaudeAgentRunner();
+    // } else if (agent.type === 'opencode') {
+    //   runner = opencodeRun;
   } else {
     return {
       sessionId: sessionId ?? null,
@@ -50,23 +56,26 @@ export async function assignHandler(taskId: string, agent: AgentResponseDto, rep
     }
   }
 
-  const result = await runner({
-    taskId,
-    prompt: `${prompt} task: ${taskId}`,
-    cwd: repoDir,
-    resume: sessionId ?? undefined,
-    persistSession: true,
-
-    // Persist immediately when init arrives
-    onSession: async (sid) => {
-      if (!sessionId) {
-        setSession(agentId, taskId, sid);
-      }
+  const result = await runner.run(
+    {
+      taskId,
+      prompt: `${prompt} task: ${taskId}`,
+      cwd: repoDir,
+      resume: sessionId ?? undefined,
     },
-
-    // Optional: stream events to logs / websocket / task updates
-    onEvent: printClaudeMessage,
-  });
+    {
+      // Persist immediately when init arrives
+      onSession: async (sid) => {
+        if (!sessionId) {
+          setSession(agentId, taskId, sid);
+        }
+      },
+      // Optional: stream events to logs / websocket / task updates
+      onEvent: (message: string) => {
+        console.log(message);
+        messageHandler(message);
+      }
+    });
 
   return {
     sessionId: sessionId ?? null,
