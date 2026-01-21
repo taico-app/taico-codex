@@ -227,15 +227,15 @@ export function TaskDetailPage() {
         ))}
       </DataRowContainer>
 
-      {/* Comment */}
-      <DataRowContainer className='task-detail-page__comment-buttons'>
-        <Button
-          size='lg'
-          onClick={() => setShowNewCommentPop(true)}
-        >
-          Comment
-        </Button>
-      </DataRowContainer>
+      {/* Floating comment button */}
+      <button
+        className="task-detail-fab"
+        type="button"
+        onClick={() => setShowNewCommentPop(true)}
+        aria-label="Add comment"
+      >
+        💬
+      </button>
 
       {/* Assign */}
       {!task.assigneeActor && (

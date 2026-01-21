@@ -106,6 +106,52 @@
   border-color: var(--color-primary, #3b82f6);
 }
 
+/* Floating action button (FAB) for comments */
+.task-detail-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+  /* below your pop (9999), above content */
+
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+
+  border: 0;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  font-size: 24px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  color: var(--accent-contrast);
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.task-detail-fab:hover {
+  background-color: var(--accent-hover);
+}
+
+.task-detail-fab:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+/* Optional: if your bottom nav overlaps, give yourself more clearance */
+@media (max-width: 900px) {
+  .task-detail-fab {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+    /* tweak 56px to your bottom nav height */
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .task-detail-page__error {
