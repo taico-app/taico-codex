@@ -2,7 +2,6 @@
 import { query, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 
 export type AgentRunArgs = {
-  taskId: string;
   prompt: string;
   cwd: string;
   resume?: string;

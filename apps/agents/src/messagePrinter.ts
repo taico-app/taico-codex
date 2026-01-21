@@ -30,22 +30,56 @@ export function printClaudeMessage(message: SDKMessage) {
 }
 
 function printAssistantMessage(message: SDKAssistantMessage) {
-  console.log(`assistant message`);
-  console.log(message);
+  const m = message.message;
+  if (m.content && Array.isArray(m.content)) {
+    m.content.forEach(c => {
+      // Tools
+      if (c.type === 'tool_use') {
+        console.log(`🔧 Tool call: ${c.name}`);
+        return;
+      }
+      // Text
+      if (c.type === 'text') {
+        console.log(`💬 Assistant: ${c.text}`);
+        return;
+      }
+      // Other
+      console.log(`💬 Assistant (other content type: ${c.type})`);
+      console.log(c);
+    })
+  }
 }
 
 function printUserMessage(message: SDKUserMessage) {
-  console.log(`user message`);
-  console.log(message);
-}
+  const m = message.message;
+  if (m.content && Array.isArray(m.content)) {
+    m.content.forEach(c => {
+      // Tools
+      if (c.type === 'tool_result') {
+        // Skip
+        console.log(`🔧 Tool result received`);
+        return;
+      }
+      // Text
+      if (c.type === 'text') {
+        console.log(`👤 User: ${c.text}`);
+        return;
+      }
+      // Other
+      console.log(`👤 User (other content type: ${c.type})`);
+      console.log(c);
+    })
+  }}
 
 function printResultMessage(message: SDKResultMessage) {
-  if (message.subtype === 'success') {
+  // A success message means the agent's turn is complete
+  if (message.subtype === 'success' && message.result && typeof message.result === 'string') {
+    console.log(`\n--- Agent turn complete ---`);
     console.log(message.result);
-  } else {
-    console.log(`result message`);
-    console.log(message);
+    console.log(`---------------------------\n`);
+    return;
   }
+  console.log(`✅ success message received`);
 }
 
 function printSystemMessage(message: SDKSystemMessage) {

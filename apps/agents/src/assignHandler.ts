@@ -52,7 +52,7 @@ export async function assignHandler(taskId: string, agent: AgentResponseDto, rep
 
   const result = await runner({
     taskId,
-    prompt,
+    prompt: `${prompt} task: ${taskId}`,
     cwd: repoDir,
     resume: sessionId ?? undefined,
     persistSession: true,
