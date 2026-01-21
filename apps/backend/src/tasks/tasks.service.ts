@@ -29,6 +29,7 @@ import {
   TaskNotFoundError,
   InvalidStatusTransitionError,
   CommentRequiredError,
+  ActorNotFoundError,
 } from './errors/tasks.errors';
 import {
   TaskCreatedEvent,
@@ -672,14 +673,6 @@ export class TasksService {
       assignedToActorId: input.assignedToActorId,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: input.taskId },
-    });
-
-    if (!task) {
-      throw new TaskNotFoundError(input.taskId);
-    }
-
     const inputRequest = this.inputRequestRepository.create({
       taskId: input.taskId,
       askedByActorId: input.askedByActorId,
@@ -689,15 +682,50 @@ export class TasksService {
       resolvedAt: null,
     });
 
-    const savedInputRequest = await this.inputRequestRepository.save(inputRequest);
+    try {
+      const savedInputRequest = await this.inputRequestRepository.save(inputRequest);
 
-    this.logger.log({
-      message: 'Input request created',
-      inputRequestId: savedInputRequest.id,
-      taskId: input.taskId,
-    });
+      this.logger.log({
+        message: 'Input request created',
+        inputRequestId: savedInputRequest.id,
+        taskId: input.taskId,
+      });
 
-    return this.mapInputRequestToResult(savedInputRequest);
+      return this.mapInputRequestToResult(savedInputRequest);
+    } catch (error: any) {
+      // If save fails, check what entity doesn't exist to provide a proper error message
+      this.logger.debug({
+        message: 'Input request creation failed, checking entities',
+        error: error.message,
+      });
+
+      // Check if task exists
+      const task = await this.taskRepository.findOne({
+        where: { id: input.taskId },
+      });
+      if (!task) {
+        throw new TaskNotFoundError(input.taskId);
+      }
+
+      // Check if askedBy actor exists
+      const askedByActor = await this.actorRepository.findOne({
+        where: { id: input.askedByActorId },
+      });
+      if (!askedByActor) {
+        throw new ActorNotFoundError(input.askedByActorId);
+      }
+
+      // Check if assignedTo actor exists
+      const assignedToActor = await this.actorRepository.findOne({
+        where: { id: input.assignedToActorId },
+      });
+      if (!assignedToActor) {
+        throw new ActorNotFoundError(input.assignedToActorId);
+      }
+
+      // If all entities exist but save still failed, rethrow the original error
+      throw error;
+    }
   }
 
   async answerInputRequest(
