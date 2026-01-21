@@ -42,7 +42,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
                       key={item.path}
                       to={item.path}
                       title={isCollapsed ? item.label : undefined}
-                      className={`beta-shell__desktop__nav-item ${isActive ? 'desktop-shell__nav-item--active' : ''}`}
+                      className={`beta-shell__desktop__nav-item ${isActive ? 'beta-shell__desktop__nav-item--active' : ''}`}
                     >
                       <span className="beta-shell__desktop__nav-icon">{item.icon}</span>
                       {!isCollapsed && <span className="beta-shell__desktop__nav-label">{item.label}</span>}
