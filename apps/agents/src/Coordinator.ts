@@ -96,7 +96,7 @@ export class Coordinator {
     const results = await runner.run(
       {
         taskId: task.id,
-        prompt: agent.systemPrompt,
+        prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
         cwd: repoDir,
       },
       {
