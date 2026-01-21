@@ -35,7 +35,7 @@ export function TaskDetailPage() {
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
 
-  const saveNewComment = async({content}: {content: string}): Promise<boolean> => {
+  const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
       return false;
     }
@@ -227,15 +227,15 @@ export function TaskDetailPage() {
         ))}
       </DataRowContainer>
 
-      {/* Comment */}
-      <DataRowContainer className='task-detail-page__comment-buttons'>
-        <Button
-          size='lg'
-          onClick={() => setShowNewCommentPop(true)}
-        >
-          Comment
-        </Button>
-      </DataRowContainer>
+      {/* Floating comment button */}
+      <Button
+        className="task-detail-fab"
+        onClick={() => setShowNewCommentPop(true)}
+        variant='primary'
+        size='lg'
+      >
+        Add Comment
+      </Button>
 
       {/* Assign */}
       {!task.assigneeActor && (
@@ -255,7 +255,7 @@ export function TaskDetailPage() {
           size='lg'
           variant='danger'
           onClick={async () => {
-            await deleteTask({taskId: task.id});
+            await deleteTask({ taskId: task.id });
             navigate('/tasks');
           }}
         >

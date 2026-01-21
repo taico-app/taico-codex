@@ -106,6 +106,24 @@
   border-color: var(--color-primary, #3b82f6);
 }
 
+/* Floating action button (FAB) for comments */
+.task-detail-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+  /* below pop (9999), above content */
+}
+
+
+/* Optional: if your bottom nav overlaps, give yourself more clearance */
+@media (max-width: 900px) {
+  .task-detail-fab {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+    /* tweak 56px to your bottom nav height */
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .task-detail-page__error {
