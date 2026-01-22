@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation, DataRowContainer } from "../../ui/primitives";
+import { Text } from "../../ui/primitives";
 import { useTasksCtx, AnimationState } from "./TasksProvider"
 import { TaskStatus } from "./const";
 import { TASKS_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Task } from "./types";
 import './TasksPage.css';
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewTaskPop } from "./NewTaskPop";
+import { TasksToRows } from "./TasksToRows";
+import { TasksToCards } from "./TasksToCards";
 
 export function TasksPage({ status }: { status?: TaskStatus }) {
 
@@ -116,165 +117,6 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
         </div>
       }
     </div>
-  )
-}
-
-function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number }): JSX.Element {
-  const [pulse, setPulse] = useState(false);
-
-  useEffect(() => {
-    if (pulseKey == null) return;
-    setPulse(true);
-    const t = setTimeout(() => setPulse(false), 1000); // match CSS
-    return () => clearTimeout(t);
-  }, [pulseKey]);
-
-  return (
-    <DataRow
-      leading={<Avatar name={task.createdByActor.displayName} size='lg' />}
-      topRight={elapsedTime(task.updatedAt)}
-      tags={task.tags.map(tag => ({ label: tag.name }))}
-      animation={animation}
-      highlight={task.inputRequests?.length > 0}
-      onClick={onClick}
-    >
-      <Text className='pre'>
-        #{task.id.slice(0, 6)}
-      </Text>
-      <Text weight="bold" size='3' tone='default'>
-        <span className="task-row__title">
-          <span className="task-row__titleText">{task.name}</span>
-          {pulse ? <span className="task-row__pulseDot" aria-hidden /> : null}
-        </span>
-      </Text>
-      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {task.description}
-      </div>
-      <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
-        {" · "}
-        {`Created by @${task.createdByActor.slug}`}
-        {task.comments.length > 0 && (
-          <span
-            style={{
-              marginLeft: 8,
-              padding: "1px 6px",
-              borderRadius: 999,
-              fontSize: 11,
-              background: "var(--surface-2)",
-              color: "var(--text-muted)",
-            }}
-          >
-            [ 💬 {task.comments.length} ]
-          </span>
-        )}
-      </div>
-    </DataRow >
-  );
-}
-
-function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
-  const navigate = useNavigate();
-  const { activityByTaskId } = useTasksCtx();
-
-  // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
-  const exitingIdSet = new Set(exitingTasks.map(t => t.id));
-
-  const allTasks = [...tasks, ...exitingTasks].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
-
-  return (
-    <DataRowContainer>
-      {allTasks.map(task => {
-        const isExiting = exitingIdSet.has(task.id);
-        const isEntering = enteringIds.has(task.id);
-
-        let animation: DataRowAnimation | undefined;
-        if (isExiting) animation = 'exiting';
-        else if (isEntering) animation = 'entering';
-
-        const activity = activityByTaskId[task.id];
-
-        return (
-          <TaskRow
-            key={isExiting ? `exiting-${task.id}` : task.id}
-            task={task}
-            animation={animation}
-            pulseKey={activity?.ts}
-            onClick={() => navigate(`/tasks/task/${task.id}`)}
-          />
-        );
-      })}
-    </DataRowContainer>
-  )
-}
-
-function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void, pulseKey?: number }): JSX.Element {
-  const tags = task.tags.map(tag => ({ label: tag.name }));
-  if (task.comments.length) {
-    tags.push({
-      label: `💬 ${task.comments.length}`
-    })
-  }
-  return (
-    <BoardCard
-      leading={<Avatar name={task.createdByActor.displayName} size='md' />}
-      topRight={elapsedTime(task.updatedAt)}
-      tags={tags}
-      animation={animation}
-      onClick={onClick}
-      pulseKey={pulseKey}
-      highlight={task.inputRequests?.length > 0}
-      footer={
-        <>
-          <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
-          <span className="row-detail truncate">
-            {task.assigneeActor ? `Assigned: @${task.assigneeActor.slug}` : "unassigned"}
-          </span>
-        </>
-      }
-    >
-      <div className="row-title truncate">{task.name}</div>
-      <div className="row-subtitle truncate">{task.description}</div>
-    </BoardCard>
-  );
-}
-
-function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
-  const navigate = useNavigate();
-  const { activityByTaskId } = useTasksCtx();
-
-  // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
-  const exitingIdSet = new Set(exitingTasks.map(t => t.id));
-
-  const allTasks = [...tasks, ...exitingTasks].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
-
-  return (
-    <>
-      {allTasks.map(task => {
-        const isExiting = exitingIdSet.has(task.id);
-        const isEntering = enteringIds.has(task.id);
-
-        const activity = activityByTaskId[task.id];
-
-        let animation: BoardCardAnimation | undefined;
-        if (isExiting) animation = 'exiting';
-        else if (isEntering) animation = 'entering';
-
-        return (
-          <TaskCard
-            key={isExiting ? `exiting-${task.id}` : task.id}
-            task={task}
-            animation={animation}
-            onClick={() => navigate(`/tasks/task/${task.id}`)}
-            pulseKey={activity?.ts}
-          />
-        );
-      })}
-    </>
   )
 }
 
