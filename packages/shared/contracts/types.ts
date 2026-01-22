@@ -1080,6 +1080,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/{actorId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch an agent (update system prompt and/or status triggers) */
+        patch: operations["AgentsController_patchAgent"];
+        trace?: never;
+    };
     "/api/v1/agents/{slug}/tokens": {
         parameters: {
             query?: never;
@@ -2988,6 +3005,21 @@ export interface components {
              * @example 3
              */
             totalPages: number;
+        };
+        PatchAgentDto: {
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt?: string;
+            /**
+             * @description Task statuses that will trigger this agent to activate
+             * @example [
+             *       "IN_PROGRESS",
+             *       "FOR_REVIEW"
+             *     ]
+             */
+            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
         };
         IssueAccessTokenRequestDto: {
             /**
@@ -5659,6 +5691,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_patchAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent actor ID */
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAgentDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

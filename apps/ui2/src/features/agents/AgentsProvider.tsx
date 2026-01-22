@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useAgents } from "./useAgents";
 import type { Agent } from "./types";
+import type { TaskStatus } from "../../shared/const/taskStatus";
 
 // Shape this to match what pages/layout need.
 export type AgentsContextValue = {
@@ -10,12 +11,13 @@ export type AgentsContextValue = {
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
   loadAgentDetails: (slug: string) => Promise<Agent | null>;
+  updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }) => Promise<Agent | null>;
 };
 
 const AgentsContext = createContext<AgentsContextValue | null>(null);
 
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
-  const { agents, isLoading, error, loadAgentDetails } = useAgents();
+  const { agents, isLoading, error, loadAgentDetails, updateAgent } = useAgents();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
@@ -27,6 +29,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       sectionTitle,
       setSectionTitle,
       loadAgentDetails,
+      updateAgent,
     };
   }, [
     agents,
@@ -35,6 +38,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     sectionTitle,
     setSectionTitle,
     loadAgentDetails,
+    updateAgent,
   ]);
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

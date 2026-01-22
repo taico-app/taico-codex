@@ -5,6 +5,7 @@
 import type { AgentListResponseDto } from '../models/AgentListResponseDto';
 import type { AgentResponseDto } from '../models/AgentResponseDto';
 import type { CreateAgentDto } from '../models/CreateAgentDto';
+import type { PatchAgentDto } from '../models/PatchAgentDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -63,6 +64,27 @@ export class AgentService {
             path: {
                 'slug': slug,
             },
+        });
+    }
+    /**
+     * Patch an agent (update system prompt and/or status triggers)
+     * @param actorId Agent actor ID
+     * @param requestBody
+     * @returns AgentResponseDto
+     * @throws ApiError
+     */
+    public static agentsControllerPatchAgent(
+        actorId: string,
+        requestBody: PatchAgentDto,
+    ): CancelablePromise<AgentResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/agents/{actorId}',
+            path: {
+                'actorId': actorId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

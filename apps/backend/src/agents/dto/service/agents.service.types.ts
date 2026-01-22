@@ -15,6 +15,11 @@ export type CreateAgentInput = {
 
 export type UpdateAgentInput = Partial<CreateAgentInput>
 
+export type PatchAgentInput = {
+  systemPrompt?: string;
+  statusTriggers?: TaskStatus[];
+};
+
 export type AgentResult = {
   actorId: string;
   slug: string;

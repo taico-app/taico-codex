@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
+import type { TaskStatus } from '../../shared/const/taskStatus';
 
 export const useAgents = () => {
   // UI feedback
@@ -53,6 +54,30 @@ export const useAgents = () => {
     }
   };
 
+  // Update agent
+  const updateAgent = async (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }): Promise<Agent | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedAgent = await AgentsService.agentsControllerPatchAgent(actorId, updates);
+
+      // Update local state
+      setAgents((prevAgents) => {
+        const newAgents = prevAgents.map((agent) =>
+          agent.actorId === actorId ? updatedAgent : agent
+        );
+        return sortAgents(newAgents);
+      });
+
+      return updatedAgent;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update agent');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // UI feedback
     isLoading,
@@ -62,5 +87,6 @@ export const useAgents = () => {
     agents,
     loadAgents,
     loadAgentDetails,
+    updateAgent,
   };
 };

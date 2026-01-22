@@ -6,6 +6,9 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
 import { AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
 import { AgentTokensService } from './api';
+import { EditSystemPromptPop } from './EditSystemPromptPop';
+import { EditStatusTriggersPop } from './EditStatusTriggersPop';
+import { TaskStatus } from '../../shared/const/taskStatus';
 import './AgentDetailPage.css';
 
 const DEFAULT_SCOPES = ['meta:read'];
@@ -13,7 +16,7 @@ const DEFAULT_SCOPES = ['meta:read'];
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { agents, setSectionTitle, loadAgentDetails } = useAgentsCtx();
+  const { agents, setSectionTitle, loadAgentDetails, updateAgent } = useAgentsCtx();
 
   // Find agent from context first (for quick load)
   const agentFromList = agents.find(a => a.slug === slug);
@@ -33,6 +36,10 @@ export function AgentDetailPage() {
   // Available scopes from the API
   const [availableScopes, setAvailableScopes] = useState<ScopeDto[]>([]);
   const [scopesLoading, setScopesLoading] = useState(false);
+
+  // Edit agent state
+  const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
+  const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -137,6 +144,40 @@ export function AgentDetailPage() {
     });
   };
 
+  // Handle saving system prompt
+  const handleSaveSystemPrompt = async ({ systemPrompt }: { systemPrompt: string }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { systemPrompt });
+      if (updated) {
+        setAgent(updated);
+        setShowEditSystemPromptPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update system prompt:', err);
+      return false;
+    }
+  };
+
+  // Handle saving status triggers
+  const handleSaveStatusTriggers = async ({ statusTriggers }: { statusTriggers: TaskStatus[] }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { statusTriggers });
+      if (updated) {
+        setAgent(updated);
+        setShowEditStatusTriggersPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update status triggers:', err);
+      return false;
+    }
+  };
+
   // Handle revoking a token
   const handleRevokeToken = async (tokenId: string) => {
     if (!slug) return;
@@ -211,25 +252,29 @@ export function AgentDetailPage() {
 
       {/* System Prompt */}
       <DataRowContainer title="System Prompt" className="agent-detail-page__section">
-        <DataRow>
+        <DataRow onClick={() => setShowEditSystemPromptPop(true)}>
           <Text size="2" className="agent-detail-page__system-prompst">
             {agent.systemPrompt || 'No system prompt configured'}
           </Text>
+          <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
       </DataRowContainer>
 
       {/* Status Triggers */}
-      {agent.statusTriggers.length > 0 && (
-        <DataRowContainer title="Status Triggers" className="agent-detail-page__section">
-          {agent.statusTriggers.map(statusTrigger =>
-            <DataRow key={statusTrigger}>
-              <Text tone="muted">
+      <DataRowContainer title="Status Triggers" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditStatusTriggersPop(true)}>
+          {agent.statusTriggers.length > 0 ? (
+            agent.statusTriggers.map(statusTrigger =>
+              <Text key={statusTrigger} tone="muted">
                 {statusTrigger}
               </Text>
-            </DataRow>
+            )
+          ) : (
+            <Text tone="muted">No status triggers configured</Text>
           )}
-        </DataRowContainer>
-      )}
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
 
       {/* Allowed Tools */}
       {agent.allowedTools.length > 0 && (
@@ -423,6 +468,22 @@ export function AgentDetailPage() {
           Back to Agents
         </Button>
       </DataRowContainer>
+
+      {/* Pops */}
+      {showEditSystemPromptPop && agent && (
+        <EditSystemPromptPop
+          initialValue={agent.systemPrompt}
+          onCancel={() => setShowEditSystemPromptPop(false)}
+          onSave={handleSaveSystemPrompt}
+        />
+      )}
+      {showEditStatusTriggersPop && agent && (
+        <EditStatusTriggersPop
+          initialValue={agent.statusTriggers as TaskStatus[]}
+          onCancel={() => setShowEditStatusTriggersPop(false)}
+          onSave={handleSaveStatusTriggers}
+        />
+      )}
     </div>
   );
 }

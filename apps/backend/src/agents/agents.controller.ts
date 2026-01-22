@@ -21,10 +21,12 @@ import {
 import { AgentsService } from './agents.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { UpdateAgentDto } from './dto/update-agent.dto';
+import { PatchAgentDto } from './dto/patch-agent.dto';
 import { AgentResponseDto } from './dto/agent-response.dto';
 import { AgentListResponseDto } from './dto/agent-list-response.dto';
 import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
+import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
 import { AgentResult } from './dto/service/agents.service.types';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
@@ -87,6 +89,21 @@ export class AgentsController {
   async getAgentBySlug(@Param() params: AgentParamsDto): Promise<AgentResponseDto> {
     console.log(params)
     const result = await this.agentsService.getAgentBySlug({slug: params.slug});
+    return this.mapResultToResponse(result);
+  }
+
+  @Patch(':actorId')
+  @RequireScopes(AgentsScopes.WRITE.id)
+  @ApiOperation({ summary: 'Patch an agent (update system prompt and/or status triggers)' })
+  @ApiOkResponse({ type: AgentResponseDto })
+  async patchAgent(
+    @Param() params: AgentActorParamsDto,
+    @Body() dto: PatchAgentDto,
+  ): Promise<AgentResponseDto> {
+    const result = await this.agentsService.patchAgent(params.actorId, {
+      systemPrompt: dto.systemPrompt,
+      statusTriggers: dto.statusTriggers,
+    });
     return this.mapResultToResponse(result);
   }
 
