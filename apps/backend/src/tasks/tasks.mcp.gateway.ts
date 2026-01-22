@@ -72,6 +72,32 @@ export class TasksMcpGateway {
       }
     )
 
+    server.registerTool(
+      'search_tasks',
+      {
+        title: 'Search tasks',
+        description: 'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
+        inputSchema: {
+          query: z.string(),
+          limit: z.number().optional(),
+          threshold: z.number().optional(),
+        },
+      },
+      async ({ query, limit, threshold }) => {
+        const results = await this.TasksService.searchTasks({
+          query,
+          limit,
+          threshold,
+        });
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(results),
+          }],
+        }
+      }
+    )
+
     canWrite && server.registerTool(
       'create_task',
       {

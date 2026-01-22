@@ -2078,6 +2078,73 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/search/query": {
+      "get": {
+        "operationId": "TasksController_searchTasks",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query string",
+            "schema": {
+              "example": "authentication",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results to return",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "threshold",
+            "required": false,
+            "in": "query",
+            "description": "Minimum score threshold (0-1, higher is stricter)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.3,
+              "example": 0.3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results sorted by relevance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskSearchResultDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Search tasks by query string",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/{id}/comments": {
       "post": {
         "operationId": "TasksController_addComment",
@@ -5744,6 +5811,33 @@
           "page",
           "limit",
           "totalPages"
+        ]
+      },
+      "TaskSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name/title",
+            "example": "Implement authentication system"
+          },
+          "score": {
+            "type": "number",
+            "description": "Match confidence score (0-1, higher is better)",
+            "example": 0.85,
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "score"
         ]
       },
       "CreateCommentDto": {

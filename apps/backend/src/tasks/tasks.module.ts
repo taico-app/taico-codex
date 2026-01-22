@@ -11,6 +11,7 @@ import { AuthorizationServerModule } from '../authorization-server/authorization
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { MetaModule } from '../meta/meta.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MetaModule } from '../meta/meta.module';
     AuthGuardsModule,
     IdentityProviderModule,
     MetaModule,
+    SearchModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksGateway, TasksMcpGateway],

@@ -126,3 +126,15 @@ export type ListTasksResult = {
   page: number;
   limit: number;
 };
+
+export type SearchTasksInput = {
+  query: string;
+  limit?: number;
+  threshold?: number;
+};
+
+export type TaskSearchResult = {
+  id: string;
+  name: string;
+  score: number;
+};

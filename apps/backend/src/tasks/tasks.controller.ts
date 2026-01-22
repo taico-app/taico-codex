@@ -42,6 +42,8 @@ import { CreateTagDto } from './dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
+import { SearchTasksQueryDto } from './dto/search-tasks-query.dto';
+import { TaskSearchResultDto } from './dto/task-search-result.dto';
 import { TaskResult, CommentResult, TagResult, ActorResult, InputRequestResult } from './dto/service/tasks.service.types';
 import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { TasksMcpGateway } from './tasks.mcp.gateway';
@@ -185,6 +187,28 @@ export class TasksController {
       limit: result.limit,
       totalPages: Math.ceil(result.total / result.limit),
     };
+  }
+
+  @Get('search/query')
+  @ApiOperation({ summary: 'Search tasks by query string' })
+  @ApiOkResponse({
+    type: [TaskSearchResultDto],
+    description: 'Search results sorted by relevance',
+  })
+  async searchTasks(
+    @Query() query: SearchTasksQueryDto,
+  ): Promise<TaskSearchResultDto[]> {
+    const results = await this.TasksService.searchTasks({
+      query: query.query,
+      limit: query.limit,
+      threshold: query.threshold,
+    });
+
+    return results.map((result) => ({
+      id: result.id,
+      name: result.name,
+      score: result.score,
+    }));
   }
 
   @Get(':id')
