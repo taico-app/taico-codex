@@ -614,6 +614,23 @@ export interface paths {
         patch: operations["TasksController_assignTask"];
         trace?: never;
     };
+    "/api/v1/tasks/tasks/{id}/assign-to-me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Assign a task to the current user */
+        patch: operations["TasksController_assignTaskToMe"];
+        trace?: never;
+    };
     "/api/v1/tasks/tasks/{id}/comments": {
         parameters: {
             query?: never;
@@ -4635,6 +4652,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_assignTaskToMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task assigned to current user successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
             };
             /** @description Task not found */
             404: {

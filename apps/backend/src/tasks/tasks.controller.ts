@@ -133,6 +133,24 @@ export class TasksController {
     return this.mapResultToResponse(result);
   }
 
+  @Patch(':id/assign-to-me')
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({ summary: 'Assign a task to the current user' })
+  @ApiOkResponse({
+    type: TaskResponseDto,
+    description: 'Task assigned to current user successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  async assignTaskToMe(
+    @Param() params: TaskParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<TaskResponseDto> {
+    const result = await this.TasksService.assignTask(params.id, {
+      assigneeActorId: user.actorId,
+    });
+    return this.mapResultToResponse(result);
+  }
+
   @Delete(':id')
   @RequireScopes(TasksScopes.WRITE.id)
   @HttpCode(HttpStatus.NO_CONTENT)

@@ -12,7 +12,7 @@ import './TaskDetailPage.css';
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
-  const { tasks, setSectionTitle, addComment, deleteTask, assignTask } = useTasksCtx();
+  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe } = useTasksCtx();
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
@@ -245,6 +245,15 @@ export function TaskDetailPage() {
             onClick={() => setShowAssignPop(true)}
           >
             Assign
+          </Button>
+          <Button
+            size='lg'
+            variant='primary'
+            onClick={async () => {
+              await assignTaskToMe({ taskId: task.id });
+            }}
+          >
+            Assign to Me
           </Button>
         </DataRowContainer>
       )}
