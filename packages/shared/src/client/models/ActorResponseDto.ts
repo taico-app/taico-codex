@@ -22,7 +22,7 @@ export type ActorResponseDto = {
     /**
      * URL to the actor avatar image
      */
-    avatarUrl?: Record<string, any> | null;
+    avatarUrl?: string | null;
 };
 export namespace ActorResponseDto {
     /**

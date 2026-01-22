@@ -23,6 +23,7 @@ import {
   AgentUpdatedEvent,
   AgentDeletedEvent,
 } from './events/agents.events';
+import { DEFAULT_AGENT_AVATAR } from './enums/agent-type.enum';
 
 @Injectable()
 export class AgentsService {
@@ -50,11 +51,17 @@ export class AgentsService {
     }
 
     // Create actor first
+    let avatarUrl: string | null = null;
+    if (input.avatarUrl !== undefined) {
+      avatarUrl = input.avatarUrl;
+    } else if (input.type !== undefined) {
+      avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
+    }
     const actor = this.actorRepository.create({
       type: ActorType.AGENT,
       slug: input.slug,
       displayName: input.name,
-      avatarUrl: null,
+      avatarUrl: avatarUrl,
     });
     const savedActor = await this.actorRepository.save(actor);
 

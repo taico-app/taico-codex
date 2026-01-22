@@ -53,7 +53,7 @@ function sizeToClass(size: AvatarSize): string | null {
 
 function sizeToStyle(size: AvatarSize): CSSProperties | undefined {
   if (typeof size !== "number") return undefined;
-  return { width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.42)) };
+  return { width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.42))};
 }
 
 export function Avatar({

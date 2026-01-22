@@ -28,6 +28,7 @@ export class ActorResponseDto {
   displayName!: string;
 
   @ApiPropertyOptional({
+    type: String,
     description: 'URL to the actor avatar image',
     example: 'https://example.com/avatar.png',
     nullable: true,

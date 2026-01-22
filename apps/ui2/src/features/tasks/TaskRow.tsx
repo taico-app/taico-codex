@@ -16,7 +16,7 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
 
   return (
     <DataRow
-      leading={<Avatar name={task.createdByActor.displayName} size='lg' />}
+      leading={<Avatar name={task.createdByActor.displayName} size='lg' src={task.createdByActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={task.tags.map(tag => ({ label: tag.name }))}
       animation={animation}

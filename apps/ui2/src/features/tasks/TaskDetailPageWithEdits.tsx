@@ -288,7 +288,7 @@ export function TaskDetailPage() {
       <DataRowContainer className='task-detail-page__section-2'>
         {/* Creator */}
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
             StatusTag({ status: task.status }),
             ...task.tags.map(tag => ({ label: tag.name })),
@@ -316,7 +316,7 @@ export function TaskDetailPage() {
         {/* Assignee */}
         {task.assigneeActor ? (
           <DataRow
-            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} />}
+            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} src={task.assigneeActor.avatarUrl || undefined}/>}
           >
             <Text as='span' weight='medium' size='3'>
               {task.assigneeActor.displayName}
@@ -333,7 +333,7 @@ export function TaskDetailPage() {
       {/* Description */}
       <DataRowContainer className='task-detail-page__section-2' >
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined}/>}
           tags={[]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.createdAt)}</Text>}
         >
@@ -361,7 +361,7 @@ export function TaskDetailPage() {
             const slug = comment.commenterActor?.slug || 'unknown';
             return (
               <DataRow
-                leading={<Avatar size={'sm'} name={name} />}
+                leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined}/>}
                 topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
               >
                 <Text as='span' weight='medium' size='3'>
@@ -439,7 +439,7 @@ export function TaskDetailPage() {
                   className="task-detail-page__input task-detail-page__input--with-actor"
                   onClick={handleClearSelection}
                 >
-                  <Avatar name={selectedActor.displayName} size="sm" />
+                  <Avatar name={selectedActor.displayName} size="sm" src={selectedActor.avatarUrl || undefined}/>
                   <Text size="3">@{selectedActor.slug}</Text>
                 </div>
               ) : (
@@ -468,7 +468,7 @@ export function TaskDetailPage() {
                       onClick={() => handleSelectActor(actor)}
                       onMouseEnter={() => setHighlightedIndex(index)}
                     >
-                      <Avatar name={actor.displayName} size="sm" />
+                      <Avatar name={actor.displayName} size="sm" src={actor.avatarUrl || undefined}/>
                       <Stack spacing="0">
                         <Text size="2" weight="medium">{actor.displayName}</Text>
                         <Text size="1" tone="muted">@{actor.slug}</Text>
@@ -491,7 +491,7 @@ export function TaskDetailPage() {
           <div className="task-detail-page__editable" onClick={() => handleStartEdit('assignee')}>
             {task.assigneeActor ? (
               <Row spacing="2">
-                <Avatar name={task.assigneeActor.displayName} size="sm" />
+                <Avatar name={task.assigneeActor.displayName} size="sm" src={task.assigneeActor.avatarUrl || undefined}/>
                 <Text size="3">@{task.assigneeActor.slug}</Text>
               </Row>
             ) : (
@@ -625,7 +625,7 @@ export function TaskDetailPage() {
             {comments.map((comment) => (
               <div key={comment.id} className="task-detail-page__comment">
                 <Row spacing="2" align="start">
-                  <Avatar name={comment.commenterName} size="sm" />
+                  <Avatar name={comment.commenterName} size="sm" src={comment.commenterActor?.avatarUrl || undefined}/>
                   <Stack spacing="1" className="task-detail-page__comment-content">
                     <Row spacing="2" align="center">
                       <Text size="2" weight="semibold">{comment.commenterName}</Text>
