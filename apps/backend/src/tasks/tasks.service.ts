@@ -59,7 +59,7 @@ export class TasksService {
     private readonly actorService: ActorService,
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
     this.logger.log({
@@ -705,6 +705,17 @@ export class TasksService {
         assignedToActorId: assignedToActorId,
       });
 
+      // Reload with relations
+      const taskWithRelations = await this.taskRepository.findOne({
+        where: { id: input.taskId },
+        relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      });
+
+      if (!taskWithRelations) {
+        throw new TaskNotFoundError(input.taskId);
+      }
+
+      this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
       return this.mapInputRequestToResult(savedInputRequest);
     } catch (error: any) {
       // If save fails, check what entity doesn't exist to provide a proper error message
