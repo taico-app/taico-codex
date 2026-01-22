@@ -17,6 +17,11 @@
   min-width: 0;
 }
 
+.board-card.board-card--highlight {
+  border-width: 2px;
+  border-color: var(--accent);
+}
+
 .board-card:hover {
   transform: translateY(-1px);
   box-shadow:
