@@ -1,6 +1,6 @@
 // Coordinator.ts
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
-import { AgentApi } from "./AgentApi.js";
+import { Traff } from "./Traff.js";
 import { ACCESS_TOKEN, BASE_URL } from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 import { getSession, setSession } from "./helpers/sessionStore.js";
@@ -11,7 +11,7 @@ export class Coordinator {
 
   private ready: boolean = false;
   private transport: SocketIOTasksTransport;
-  private client: AgentApi;
+  private client: Traff;
 
   // Make transport
   constructor() {
@@ -24,7 +24,7 @@ export class Coordinator {
       }
     );
 
-    this.client = new AgentApi(BASE_URL, ACCESS_TOKEN);
+    this.client = new Traff(BASE_URL, ACCESS_TOKEN);
   }
 
   async connect(): Promise<boolean> {
@@ -93,33 +93,42 @@ export class Coordinator {
 
     // Create agent runner
     const runner = new ClaudeAgentRunner()
-    const results = await runner.run(
-      {
-        taskId: task.id,
-        prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
-        cwd: repoDir,
-      },
-      {
-        onEvent: (message: string) => {
-          console.log(`Message`);
-          console.log(message);
-          this.transport.publishActivity({
-            taskId: task.id,
-            message,
-            ts: Date.now(),
-          });
+
+    try {
+      const results = await runner.run(
+        {
+          taskId: task.id,
+          prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
+          cwd: repoDir,
         },
-        onSession: (sessionId: string) => {
-          if (!sessionId) {
-            setSession(agent.actorId, task.id, sessionId);
+        {
+          onEvent: (message: string) => {
+            console.log(`Message`);
+            console.log(message);
+            this.transport.publishActivity({
+              taskId: task.id,
+              message,
+              ts: Date.now(),
+            });
+          },
+          onSession: (sessionId: string) => {
+            if (!sessionId) {
+              setSession(agent.actorId, task.id, sessionId);
+            }
           }
         }
-      }
-    )
-
-    console.log(results);
+      )
+  
+      console.log(results);
+      
+      // Force a comment
+      this.client.addComment(task.id, `Finished.\n\n${results.result}`);
+    } catch (error) {
+      console.error(`Error running task`);
+      console.error(error);
+      // Force a comment
+      this.client.addComment(task.id, `❌ Something went wrong ❌\n\n${error}`);
+    }
   }
-
-
 }
 

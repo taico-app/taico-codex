@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
-import { AgentApiClient } from "./AgentApi.js";
+import { AgentApiClient } from "./Traff.js";
 import { assignHandler } from "./assignHandler.js";
 import { TasksListener } from "./ws.js";
 import { BASE_URL } from "./helpers/config.js";
