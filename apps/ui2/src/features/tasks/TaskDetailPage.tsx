@@ -115,7 +115,7 @@ export function TaskDetailPage() {
       <DataRowContainer className='task-detail-page__section'>
         {/* Creator */}
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined}/>}
           tags={[
             StatusTag({ status: task.status }),
             ...task.tags.map(tag => ({ label: tag.name })),
@@ -143,7 +143,7 @@ export function TaskDetailPage() {
         {/* Assignee */}
         {task.assigneeActor ? (
           <DataRow
-            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} />}
+            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} src={task.assigneeActor.avatarUrl || undefined}/>}
             onClick={() => setShowAssignPop(true)}
           >
             <Text as='span' weight='medium' size='3'>
@@ -162,7 +162,7 @@ export function TaskDetailPage() {
       {/* Description */}
       <DataRowContainer className='task-detail-page__section' >
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined}/>}
           tags={[]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.createdAt)}</Text>}
         >
@@ -191,7 +191,7 @@ export function TaskDetailPage() {
             return (
               <DataRow
                 key={comment.id}
-                leading={<Avatar size={'sm'} name={name} />}
+                leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined}/>}
                 topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
               >
                 <Text as='span' weight='medium' size='3'>

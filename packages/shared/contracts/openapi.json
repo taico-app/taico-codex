@@ -5341,7 +5341,7 @@
             "example": "John Doe"
           },
           "avatarUrl": {
-            "type": "object",
+            "type": "string",
             "description": "URL to the actor avatar image",
             "example": "https://example.com/avatar.png",
             "nullable": true

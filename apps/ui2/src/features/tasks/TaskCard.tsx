@@ -12,7 +12,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
   }
   return (
     <BoardCard
-      leading={<Avatar name={task.createdByActor.displayName} size='md' />}
+      leading={<Avatar name={task.createdByActor.displayName} size='md' src={task.createdByActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}

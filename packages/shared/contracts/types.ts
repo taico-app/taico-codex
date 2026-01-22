@@ -2219,7 +2219,7 @@ export interface components {
              * @description URL to the actor avatar image
              * @example https://example.com/avatar.png
              */
-            avatarUrl?: Record<string, never> | null;
+            avatarUrl?: string | null;
         };
         CreateTaskDto: {
             /**

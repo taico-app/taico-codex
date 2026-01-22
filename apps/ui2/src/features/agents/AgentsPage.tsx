@@ -12,7 +12,7 @@ export function AgentsPage() {
 
   // Set page title
   useEffect(() => {
-    setSectionTitle("All Agents");
+    setSectionTitle("All Agents 🦄");
   }, [setSectionTitle]);
 
   if (isLoading && agents.length === 0) {

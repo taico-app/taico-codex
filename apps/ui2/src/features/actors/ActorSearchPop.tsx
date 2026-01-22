@@ -133,7 +133,7 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
         {/* Search input or selected actor display */}
         {selectedActor ? (
           <div className="actor-search-pop__selected" onClick={handleClearSelection}>
-            <Avatar name={selectedActor.displayName} size="md" />
+            <Avatar name={selectedActor.displayName} size="md" src={selectedActor.avatarUrl || undefined}/>
             <div className="actor-search-pop__selected-info">
               <Text weight="medium" size="3">{selectedActor.displayName}</Text>
               <Text tone="muted" size="2">@{selectedActor.slug}</Text>
@@ -166,7 +166,7 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
                     onClick={() => handleSelectActor(actor)}
                     onMouseEnter={() => setHighlightedIndex(index)}
                   >
-                    <Avatar name={actor.displayName} size="sm" />
+                    <Avatar name={actor.displayName} size="sm" src={actor.avatarUrl || undefined} />
                     <div className="actor-search-pop__item-info">
                       <Text weight="medium" size="2">{actor.displayName}</Text>
                       <Text tone="muted" size="1">@{actor.slug} · {actor.type}</Text>

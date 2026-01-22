@@ -4,12 +4,13 @@ import { useAgentsCtx } from './AgentsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
+import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import './AgentDetailPage.css';
+import { useActorsCtx } from '../actors';
 
 const DEFAULT_SCOPES = ['meta:read'];
 
@@ -40,6 +41,19 @@ export function AgentDetailPage() {
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
+
+  // Find actor associated with this agent
+  const { actors } = useActorsCtx();
+  const [actor, setActor] = useState<ActorResponseDto | null>(null);
+  useEffect(() => {
+    if (!agent || !actors) {
+      return;
+    }
+    const actor = actors.find(actor => actor.id === agent.actorId)
+    if (actor) {
+      setActor(actor);
+    }
+  }, [agent, actors]);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -229,7 +243,8 @@ export function AgentDetailPage() {
       {/* Meta */}
       <DataRowContainer className="agent-detail-page__section">
         <DataRow
-          leading={<Avatar size="sm" name={agent.name} />}
+          // TODO: this agent doesn't come with Actor, so I can't get the avatar.
+          leading={<Avatar size="sm" name={agent.name} src={actor?.avatarUrl || undefined} />}
           tags={[
             getTypeTag(agent.type),
             getStatusTag(agent.isActive),
