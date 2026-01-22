@@ -6369,6 +6369,7 @@
               "tasks.readTask",
               "context.search"
             ],
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
@@ -6389,8 +6390,7 @@
         "required": [
           "slug",
           "name",
-          "systemPrompt",
-          "allowedTools"
+          "systemPrompt"
         ]
       },
       "AgentResponseDto": {

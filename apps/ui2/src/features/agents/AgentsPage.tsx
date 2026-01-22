@@ -1,14 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/primitives";
 import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { AgentResponseDto } from "shared";
+import { NewAgentPop } from "./NewAgentPop";
+import { useIsDesktop } from "../../app/hooks/useIsDesktop";
+import "./AgentsPage.css";
 
 export function AgentsPage() {
-  const { agents, setSectionTitle, isLoading, error } = useAgentsCtx();
+  const { agents, setSectionTitle, isLoading, error, createAgent } = useAgentsCtx();
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
+  const [showNewAgentPop, setShowNewAgentPop] = useState(false);
 
   // Set page title
   useEffect(() => {
@@ -45,16 +50,58 @@ export function AgentsPage() {
     );
   }
 
+  const handleNewAgentCancel = () => {
+    setShowNewAgentPop(false);
+  };
+
+  const handleNewAgentSave = async ({ name, slug }: { name: string; slug: string }): Promise<boolean> => {
+    try {
+      const agent = await createAgent({ name, slug });
+      if (agent) {
+        navigate(`/agents/agent/${agent.slug}`);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('Error creating agent');
+      console.error(error);
+      return false;
+    }
+  };
+
   return (
-    <DataRowContainer>
-      {agents.map(agent => (
-        <AgentRow
-          key={agent.actorId}
-          agent={agent}
-          onClick={() => navigate(`/agents/agent/${agent.slug}`)}
-        />
-      ))}
-    </DataRowContainer>
+    <>
+      <DataRowContainer>
+        {agents.map(agent => (
+          <AgentRow
+            key={agent.actorId}
+            agent={agent}
+            onClick={() => navigate(`/agents/agent/${agent.slug}`)}
+          />
+        ))}
+      </DataRowContainer>
+
+      <button
+        className={`agents-fab ${isDesktop ? 'agents-fab--desktop' : ''}`}
+        type="button"
+        onClick={() => setShowNewAgentPop(true)}
+        aria-label="Create new agent"
+      >
+        {isDesktop ? (
+          <>
+            <span className="agents-fab__plus">+</span>
+            <span className="agents-fab__label">New agent</span>
+          </>
+        ) : (
+          '+'
+        )}
+      </button>
+
+      {showNewAgentPop ? (
+        <NewAgentPop onCancel={handleNewAgentCancel} onSave={handleNewAgentSave} />
+      ) : null}
+    </>
   );
 }
 
