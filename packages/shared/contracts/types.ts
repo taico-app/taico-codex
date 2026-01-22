@@ -2900,6 +2900,7 @@ export interface components {
             statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
              * @description List of tool identifiers this agent is allowed to use
+             * @default []
              * @example [
              *       "tasks.createTask",
              *       "tasks.readTask",

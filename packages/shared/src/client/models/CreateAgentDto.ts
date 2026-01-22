@@ -30,7 +30,7 @@ export type CreateAgentDto = {
     /**
      * List of tool identifiers this agent is allowed to use
      */
-    allowedTools: Array<string>;
+    allowedTools?: Array<string>;
     /**
      * Whether this agent is available for assignment
      */

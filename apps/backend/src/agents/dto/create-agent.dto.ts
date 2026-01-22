@@ -52,7 +52,6 @@ export class CreateAgentDto {
     example: 'You are a helpful assistant that helps users with tasks.',
   })
   @IsString()
-  @IsNotEmpty()
   systemPrompt!: string;
 
   // TODO: refine description and examples and types
@@ -68,14 +67,16 @@ export class CreateAgentDto {
   @IsOptional()
   statusTriggers?: TaskStatus[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'List of tool identifiers this agent is allowed to use',
     example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
     type: [String],
+    default: [],
   })
   @IsArray()
   @IsString({ each: true })
-  allowedTools!: string[];
+  @IsOptional()
+  allowedTools?: string[];
 
   @ApiPropertyOptional({
     description: 'Whether this agent is available for assignment',

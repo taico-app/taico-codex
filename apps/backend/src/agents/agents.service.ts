@@ -69,9 +69,9 @@ export class AgentsService {
       actorId: savedActor.id,
       type: input.type ?? AgentType.OTHER,
       description: input.description ?? null,
-      systemPrompt: input.systemPrompt,
-      statusTriggers: input.statusTriggers,
-      allowedTools: input.allowedTools,
+      systemPrompt: input.systemPrompt ?? '',
+      statusTriggers: input.statusTriggers ?? [],
+      allowedTools: input.allowedTools ?? [],
       isActive: input.isActive ?? true,
       concurrencyLimit: input.concurrencyLimit ?? null,
     });
