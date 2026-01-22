@@ -34,6 +34,7 @@ export function TaskDetailPage() {
   // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
@@ -260,16 +261,35 @@ export function TaskDetailPage() {
 
       {/* Delete */}
       <DataRowContainer className='task-detail-page__comment-buttons'>
-        <Button
-          size='lg'
-          variant='danger'
-          onClick={async () => {
-            await deleteTask({ taskId: task.id });
-            navigate('/tasks');
-          }}
-        >
-          Delete
-        </Button>
+        {!showDeleteConfirm ? (
+          <Button
+            size='lg'
+            variant='danger'
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Delete
+          </Button>
+        ) : (
+          <>
+            <Button
+              size='lg'
+              variant='secondary'
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size='lg'
+              variant='danger'
+              onClick={async () => {
+                await deleteTask({ taskId: task.id });
+                navigate('/tasks');
+              }}
+            >
+              Confirm Delete
+            </Button>
+          </>
+        )}
       </DataRowContainer>
 
       {/* Back button */}
