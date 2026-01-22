@@ -31,6 +31,7 @@ export interface BoardCardProps {
   animation?: BoardCardAnimation;
 
   pulseKey?: number;
+  highlight?: boolean;
 
   /** Click handler for the row */
   onClick?: () => void;
@@ -49,6 +50,7 @@ export function BoardCard({
   onClick,
   className = "",
   pulseKey,
+  highlight,
 }: BoardCardProps) {
 
   const [pulse, setPulse] = useState(false);
@@ -63,10 +65,11 @@ export function BoardCard({
 
   const animationClass = animation ? `board-card--${animation}` : "";
   const pulseClass = pulse ? "board-card--eventPulse" : "";
+  const highlightClass = highlight ? "board-card--highlight": "";
 
   return (
     <div className={`board-card__wrapper ${animationClass}`} onClick={onClick}>
-      <div className={`board-card ${pulseClass} ${className}`} data-component="board-card">
+      <div className={`board-card ${highlightClass} ${pulseClass} ${className}`} data-component="board-card">
         <div className="board-card__header">
           <div className="board-card__headerLeft">
             {leading ? <div className="board-card__leading">{leading}</div> : null}
