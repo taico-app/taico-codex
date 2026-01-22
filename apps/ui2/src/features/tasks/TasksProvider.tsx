@@ -31,6 +31,7 @@ export type TasksContextValue = {
     taskId: string;
     assigneeActorId: string;
   }) => Promise<TaskResponseDto>;
+  assignTaskToMe: ({ taskId }: { taskId: string }) => Promise<TaskResponseDto>;
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -59,7 +60,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, activityByTaskId } = useTasks();
+  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Refs for synchronous computation
@@ -184,6 +185,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       deleteTask,
       addComment,
       assignTask,
+      assignTaskToMe,
       isLoading,
       error,
       isConnected,
@@ -200,6 +202,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     deleteTask,
     addComment,
     assignTask,
+    assignTaskToMe,
     isLoading,
     error,
     isConnected,

@@ -2037,6 +2037,47 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/{id}/assign-to-me": {
+      "patch": {
+        "operationId": "TasksController_assignTaskToMe",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task assigned to current user successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Assign a task to the current user",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/{id}/comments": {
       "post": {
         "operationId": "TasksController_addComment",

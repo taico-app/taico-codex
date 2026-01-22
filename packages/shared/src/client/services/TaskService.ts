@@ -159,6 +159,26 @@ export class TaskService {
         });
     }
     /**
+     * Assign a task to the current user
+     * @param id Task UUID
+     * @returns TaskResponseDto Task assigned to current user successfully
+     * @throws ApiError
+     */
+    public static tasksControllerAssignTaskToMe(
+        id: string,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/tasks/tasks/{id}/assign-to-me',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
      * Add a comment to a task
      * @param id Task UUID
      * @param requestBody

@@ -96,6 +96,11 @@ export const useTasks = () => {
     return await TasksService.tasksControllerAssignTask(taskId, dto);
   }
 
+  // Assign task to me
+  const assignTaskToMe = async ({ taskId }: { taskId: string }) => {
+    return await TasksService.tasksControllerAssignTaskToMe(taskId);
+  }
+
   // Load tasks
   const loadTasks = async () => {
     setIsLoading(true);
@@ -218,7 +223,8 @@ export const useTasks = () => {
     deleteTask,
     addComment,
     assignTask,
-    
+    assignTaskToMe,
+
 
     // Transport
     isConnected,
