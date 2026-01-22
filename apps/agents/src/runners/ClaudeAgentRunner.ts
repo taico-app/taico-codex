@@ -2,6 +2,7 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
+import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -23,6 +24,15 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         persistSession: true,
         settingSources: ['user', 'project', 'local'],
         ...(ctx.options ?? {}),
+        mcpServers: {
+          tasks: {
+            type: "http",
+            url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
+            headers: {
+              Authorization: `Bearer ${ACCESS_TOKEN}`
+            },
+          }
+        }
       },
     });
 
