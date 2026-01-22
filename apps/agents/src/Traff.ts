@@ -1,14 +1,19 @@
 // agentApiClient.ts
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
+import { CreateCommentDto } from "../../backend/src/tasks/dto/create-comment.dto.js";
 
-export class AgentApi {
+export class Traff {
   constructor(
     private readonly baseUrl: string,
     private readonly accessToken: string,
-  ) {}
+  ) { }
 
   private agentUrl(agentSlug: string) {
     return `${this.baseUrl}/api/v1/agents/${encodeURIComponent(agentSlug)}`;
+  }
+
+  private taskUrl(taskId: string) {
+    return `${this.baseUrl}/api/v1/tasks/tasks/${encodeURIComponent(taskId)}`;
   }
 
   async getAgent(agentSlug: string): Promise<AgentResponseDto | null> {
@@ -19,14 +24,14 @@ export class AgentApi {
       headers: { accept: "application/json", authorization: `Bearer ${this.accessToken}` },
     });
 
-    
+
     if (res.status !== 200) {
       try {
         const err = await res.json();
         if (err['code'] === "AGENT_NOT_FOUND") {
           return null;
         }
-      } catch {}
+      } catch { }
       throw new Error(
         [
           `[AgentApiClient] Failed to fetch agent.`,
@@ -35,7 +40,7 @@ export class AgentApi {
         ].join("\n")
       );
     }
-    
+
     const agent = await res.json() as AgentResponseDto;
 
     return agent;
@@ -73,5 +78,29 @@ export class AgentApi {
     }
 
     return triggers;
+  }
+
+  async addComment(taskId: string, comment: string): Promise<void> {
+    const url = `${this.taskUrl(taskId)}/comments`;
+
+    const payload: CreateCommentDto = {
+      content: comment,
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        authorization: `Bearer ${this.accessToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    // Most APIs return 201 for successful POSTs, but allow 200 as well
+    if (res.status !== 200 && res.status !== 201) {
+      console.error(`Failed to post comment to task ${taskId}:`);
+    }
+    return;
   }
 }

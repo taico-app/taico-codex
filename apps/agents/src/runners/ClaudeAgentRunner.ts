@@ -27,7 +27,6 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     });
 
     for await (const msg of stream) {
-      console.log(msg)
       // session capture
       if (
         msg?.type === 'system' &&
