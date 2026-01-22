@@ -60,6 +60,7 @@ export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
 export type { PageSummaryDto } from './models/PageSummaryDto';
 export type { PageTreeResponseDto } from './models/PageTreeResponseDto';
+export type { PatchAgentDto } from './models/PatchAgentDto';
 export { RegisterClientDto } from './models/RegisterClientDto';
 export type { ReorderPageDto } from './models/ReorderPageDto';
 export type { ScopeDto } from './models/ScopeDto';

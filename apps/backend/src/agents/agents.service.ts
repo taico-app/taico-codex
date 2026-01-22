@@ -9,6 +9,7 @@ import { AgentType } from './enums';
 import {
   CreateAgentInput,
   UpdateAgentInput,
+  PatchAgentInput,
   AgentResult,
   ListAgentsInput,
   ListAgentsResult,
@@ -240,6 +241,52 @@ export class AgentsService {
 
   //   this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(agentId));
   // }
+
+  async patchAgent(
+    actorId: string,
+    input: PatchAgentInput,
+  ): Promise<AgentResult> {
+    this.logger.log(`Patching agent with actorId: ${actorId}`);
+
+    // Find agent by actorId
+    const agent = await this.agentRepository.findOne({
+      where: { actorId },
+      relations: ['actor'],
+    });
+
+    if (!agent) {
+      throw new AgentNotFoundError(actorId);
+    }
+    if (!agent.actor) {
+      throw new AgentNotFoundError(actorId);
+    }
+
+    // Apply partial updates to agent
+    if (input.systemPrompt !== undefined) {
+      agent.systemPrompt = input.systemPrompt;
+    }
+    if (input.statusTriggers !== undefined) {
+      agent.statusTriggers = input.statusTriggers;
+    }
+
+    const updatedAgent = await this.agentRepository.save(agent);
+
+    // Reload with actor relation
+    const agentWithRelations = await this.agentRepository.findOne({
+      where: { id: updatedAgent.id },
+      relations: ['actor'],
+    });
+    if (!agentWithRelations || !agentWithRelations.actor) {
+      throw new AgentNotFoundError(updatedAgent.id);
+    }
+
+    this.eventEmitter.emit(
+      'agent.updated',
+      new AgentUpdatedEvent(agentWithRelations),
+    );
+
+    return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
+  }
 
   private mapAgentToResult(agent: AgentEntity, actor: ActorEntity): AgentResult {
     return {

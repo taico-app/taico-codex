@@ -3538,6 +3538,54 @@
         ]
       }
     },
+    "/api/v1/agents/{actorId}": {
+      "patch": {
+        "operationId": "AgentsController_patchAgent",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "description": "Agent actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Patch an agent (update system prompt and/or status triggers)",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
     "/api/v1/agents/{slug}/tokens": {
       "post": {
         "operationId": "AgentTokensController_issueToken",
@@ -6449,6 +6497,33 @@
           "limit",
           "totalPages"
         ]
+      },
+      "PatchAgentDto": {
+        "type": "object",
+        "properties": {
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that will trigger this agent to activate",
+            "example": [
+              "IN_PROGRESS",
+              "FOR_REVIEW"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          }
+        }
       },
       "IssueAccessTokenRequestDto": {
         "type": "object",
