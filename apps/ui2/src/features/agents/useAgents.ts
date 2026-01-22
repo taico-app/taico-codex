@@ -54,6 +54,38 @@ export const useAgents = () => {
     }
   };
 
+  // Create agent
+  const createAgent = async (params: { name: string; slug: string }): Promise<Agent | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Create agent with mandatory fields and defaults for the rest
+      const newAgent = await AgentsService.agentsControllerCreateAgent({
+        name: params.name,
+        slug: params.slug,
+        systemPrompt: '', // Empty as per requirements
+        allowedTools: [], // Empty as per requirements
+        type: undefined, // Will use backend default
+        description: undefined,
+        statusTriggers: undefined,
+        isActive: undefined,
+        concurrencyLimit: undefined,
+      });
+
+      // Add to local state
+      setAgents((prevAgents) => {
+        return sortAgents([...prevAgents, newAgent]);
+      });
+
+      return newAgent;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create agent');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Update agent
   const updateAgent = async (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }): Promise<Agent | null> => {
     setIsLoading(true);
@@ -87,6 +119,7 @@ export const useAgents = () => {
     agents,
     loadAgents,
     loadAgentDetails,
+    createAgent,
     updateAgent,
   };
 };

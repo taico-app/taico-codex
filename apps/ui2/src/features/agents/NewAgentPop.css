@@ -1,0 +1,23 @@
+.new-agent-pop__input-name {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-4);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.new-agent-pop__input-name:focus {
+  outline: none;
+}
+
+.new-agent-pop__input-slug {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-3);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.new-agent-pop__input-slug:focus {
+  outline: none;
+}
