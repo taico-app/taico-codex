@@ -15,6 +15,7 @@ import type { InputRequestResponseDto } from '../models/InputRequestResponseDto'
 import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
+import type { TaskSearchResultDto } from '../models/TaskSearchResultDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -175,6 +176,29 @@ export class TaskService {
             },
             errors: {
                 404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Search tasks by query string
+     * @param query Search query string
+     * @param limit Maximum number of results to return
+     * @param threshold Minimum score threshold (0-1, higher is stricter)
+     * @returns TaskSearchResultDto Search results sorted by relevance
+     * @throws ApiError
+     */
+    public static tasksControllerSearchTasks(
+        query: string,
+        limit: number = 10,
+        threshold: number = 0.3,
+    ): CancelablePromise<Array<TaskSearchResultDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/tasks/tasks/search/query',
+            query: {
+                'query': query,
+                'limit': limit,
+                'threshold': threshold,
             },
         });
     }

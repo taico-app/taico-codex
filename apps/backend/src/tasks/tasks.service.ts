@@ -24,6 +24,8 @@ import {
   TagResult,
   ActorResult,
   InputRequestResult,
+  SearchTasksInput,
+  TaskSearchResult,
 } from './dto/service/tasks.service.types';
 import {
   TaskNotFoundError,
@@ -42,6 +44,7 @@ import {
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class TasksService {
@@ -59,6 +62,7 @@ export class TasksService {
     private readonly actorService: ActorService,
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly searchService: SearchService,
   ) { }
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -776,5 +780,51 @@ export class TasksService {
     });
 
     return this.mapInputRequestToResult(updatedInputRequest);
+  }
+
+  async searchTasks(input: SearchTasksInput): Promise<TaskSearchResult[]> {
+    this.logger.log({
+      message: 'Searching tasks',
+      query: input.query,
+      limit: input.limit,
+      threshold: input.threshold,
+    });
+
+    // Get all tasks - we need to search across all of them
+    const tasks = await this.taskRepository.find({
+      relations: ['comments'],
+    });
+
+    // Map tasks to searchable format with combined comment text
+    const searchableItems = tasks.map((task) => ({
+      id: task.id,
+      name: task.name,
+      description: task.description,
+      // Combine all comments into a searchable text field
+      commentsText: task.comments?.map((c) => c.content).join(' ') || '',
+    }));
+
+    // Use the generic search service
+    // Primary field is 'name', secondary is a combination of description and comments
+    const searchResults = this.searchService.search({
+      items: searchableItems,
+      primaryField: 'name',
+      secondaryField: 'description',
+      query: input.query,
+      limit: input.limit,
+      threshold: input.threshold,
+    });
+
+    this.logger.log({
+      message: 'Search completed',
+      resultCount: searchResults.length,
+    });
+
+    // Map to TaskSearchResult
+    return searchResults.map((result) => ({
+      id: result.id,
+      name: result.primaryField,
+      score: result.score,
+    }));
   }
 }

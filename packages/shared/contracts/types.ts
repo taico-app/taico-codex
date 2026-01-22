@@ -631,6 +631,23 @@ export interface paths {
         patch: operations["TasksController_assignTaskToMe"];
         trace?: never;
     };
+    "/api/v1/tasks/tasks/search/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search tasks by query string */
+        get: operations["TasksController_searchTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/tasks/{id}/comments": {
         parameters: {
             query?: never;
@@ -2481,6 +2498,23 @@ export interface components {
              * @example 3
              */
             totalPages: number;
+        };
+        TaskSearchResultDto: {
+            /**
+             * @description Task ID
+             * @example ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
+             */
+            id: string;
+            /**
+             * @description Task name/title
+             * @example Implement authentication system
+             */
+            name: string;
+            /**
+             * @description Match confidence score (0-1, higher is better)
+             * @example 0.85
+             */
+            score: number;
         };
         CreateCommentDto: {
             /**
@@ -4690,6 +4724,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    TasksController_searchTasks: {
+        parameters: {
+            query: {
+                /** @description Search query string */
+                query: string;
+                /** @description Maximum number of results to return */
+                limit?: number;
+                /** @description Minimum score threshold (0-1, higher is stricter) */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search results sorted by relevance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskSearchResultDto"][];
+                };
             };
         };
     };

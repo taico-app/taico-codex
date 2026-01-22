@@ -71,6 +71,7 @@ export type { ServerResponseDto } from './models/ServerResponseDto';
 export type { TagResponseDto } from './models/TagResponseDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
+export type { TaskSearchResultDto } from './models/TaskSearchResultDto';
 export { TokenExchangeRequestDto } from './models/TokenExchangeRequestDto';
 export type { TokenExchangeResponseDto } from './models/TokenExchangeResponseDto';
 export { TokenRequestDto } from './models/TokenRequestDto';
