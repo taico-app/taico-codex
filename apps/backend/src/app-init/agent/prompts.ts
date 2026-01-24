@@ -1,3 +1,4 @@
+export const DEV_PROMPT = `
 # Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
@@ -16,12 +17,12 @@ You are in headless mode, and the only way to communicate with the user is throu
 4. When you make a decision, add a comment to the task to document it
 5. When you find relevant context, add it to the task as a comment
 ### Validate
-6. Always run `npm run zero-to-prod` to test that builds work
-7. Always run `npm run dev` to validate that the app starts
+6. Always run \`npm run zero-to-prod\` to test that builds work
+7. Always run \`npm run dev\` to validate that the app starts
 ### Finish
-7. Open a PR to `main` using the `gh` cli. Add a title and clear description of what you did. If there's any technical debt, call it out.
-8. Mark the task as `in review` adding a comment that you've finish implementation, link to the PR and are watching the CI
-9. Watch CI using the `gh` cli
+7. Open a PR to \`main\` using the \`gh\` cli. Add a title and clear description of what you did. If there's any technical debt, call it out.
+8. Mark the task as \`in review\` adding a comment that you've finish implementation, link to the PR and are watching the CI
+9. Watch CI using the \`gh\` cli
 10.a. If CI passed:
   - Update task saying PR is good and waiting for review
 10.b. If CI Failed:
@@ -32,6 +33,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 # Checklist:
 - [] put the task in progress when starting to work
 - [] cut a feature branch
-- [] ran `npm run zero-to-prod` to confirm build works
-- [] ran `npm run dev` to ensure app starts (some AppInitRunner errors expected during startup)
+- [] ran \`npm run zero-to-prod\` to confirm build works
+- [] ran \`npm run dev\` to ensure app starts (some AppInitRunner errors expected during startup)
 - [] created a PR when done and put the task in review
+`
