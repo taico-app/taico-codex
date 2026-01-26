@@ -7,11 +7,15 @@ import { z } from "zod";
 import { TaskStatus } from "./enums";
 import { AuthContext, UserContext } from "src/auth/guards/context/auth-context.types";
 import { TasksScopes } from "./tasks.scopes";
+import { ActorService } from "src/identity-provider/actor.service";
 
 @Injectable()
 export class TasksMcpGateway {
 
-  constructor(private readonly TasksService: TasksService) { }
+  constructor(
+    private readonly TasksService: TasksService,
+    private readonly ActorService: ActorService,
+  ) { }
 
   private buildServer(user: UserContext, authContext: AuthContext): McpServer {
     const server = new McpServer({
@@ -88,6 +92,29 @@ export class TasksMcpGateway {
           query,
           limit,
           threshold,
+        });
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(results),
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'search_actors',
+      {
+        title: 'Search actors',
+        description: 'Fuzzy search for actors by display name or slug. Returns matching actors sorted by relevance.',
+        inputSchema: {
+          query: z.string(),
+        },
+      },
+      async ({ query }) => {
+        const results = await this.ActorService.searchActors({
+          query,
+          limit: 10,
         });
         return {
           content: [{
