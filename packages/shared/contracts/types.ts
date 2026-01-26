@@ -1253,7 +1253,7 @@ export interface components {
              * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "none";
+            token_endpoint_auth_method: "none" | "client_secret_basic";
             /**
              * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
              * @example [
@@ -1362,7 +1362,7 @@ export interface components {
              * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "none";
+            token_endpoint_auth_method: "none" | "client_secret_basic";
             /**
              * @description Scopes granted to the client
              * @example openid profile email
@@ -1729,6 +1729,11 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "standard";
+            /**
+             * @description Actor ID associated with this user
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            actorId: string;
         };
         LoginResponseDto: {
             /** @description Authenticated user information */

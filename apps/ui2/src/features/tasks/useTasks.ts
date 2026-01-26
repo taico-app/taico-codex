@@ -101,6 +101,11 @@ export const useTasks = () => {
     return await TasksService.tasksControllerAssignTaskToMe(taskId);
   }
 
+  // Answer input request
+  const answerInputRequest = async ({ taskId, inputRequestId, answer }: { taskId: string, inputRequestId: string, answer: string }) => {
+    return await TasksService.tasksControllerAnswerInputRequest(taskId, inputRequestId, { answer });
+  }
+
   // Load tasks
   const loadTasks = async () => {
     setIsLoading(true);
@@ -190,6 +195,22 @@ export const useTasks = () => {
       }
     });
 
+    newSocket.on('input.request.answered', async (inputRequest: { taskId: string }) => {
+      console.log('input.request.answered');
+      try {
+        const updatedTask = await TasksService.tasksControllerGetTask(inputRequest.taskId);
+        setTasks((prev) => {
+          const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
+          if (existingTaskIndex === -1) {
+            return sortTasks([updatedTask, ...prev]);
+          }
+          return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+        });
+      } catch (err) {
+        console.error('Failed to refresh task after input request answer', err);
+      }
+    });
+
     newSocket.on('task.status_changed', (task: Task) => {
       console.log('task.status_changed');
       console.log(task);
@@ -224,6 +245,7 @@ export const useTasks = () => {
     addComment,
     assignTask,
     assignTaskToMe,
+    answerInputRequest,
 
 
     // Transport
