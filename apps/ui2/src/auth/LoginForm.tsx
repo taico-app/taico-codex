@@ -61,8 +61,10 @@ export function LoginForm() {
     <form onSubmit={handleSubmit}>
       <Stack spacing="6">
         <Stack spacing="2" align="center">
-          <Text size="6" weight="bold">Welcome Back</Text>
-          <Text tone="muted">Sign in to your account</Text>
+          <Text size="6" weight="bold" className='login__copy'>Taico</Text>
+          <Text tone="muted" className='login__copy'>
+            Where people and agents collaborate in threads, using shared context to get work done.
+          </Text>
         </Stack>
 
         <Stack spacing="4">
@@ -76,7 +78,7 @@ export function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="login-input"
-              placeholder="you@example.com"
+              placeholder="name@work.com"
               required
               disabled={isLoading}
               autoComplete="email"
