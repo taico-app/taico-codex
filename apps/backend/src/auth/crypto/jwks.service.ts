@@ -70,10 +70,12 @@ export class JwksService {
     const publicJwk = await exportJWK(publicKey);
     const kid = await calculateJwkThumbprint(publicJwk);
 
-    // Calculate expiration date based on TTL
+    // Calculate expiration date based on signing TTL
     const config = getConfig();
+
+    // expiresAt: when the key stops being used for signing
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + config.jwksKeyTtlHours);
+    expiresAt.setHours(expiresAt.getHours() + config.jwksKeySigningTtlHours);
 
     // Create and save the new key
     const newKey = this.keyRepository.create({
@@ -97,10 +99,19 @@ export class JwksService {
    * signed with recently rotated keys
    */
   async getPublicKeys(): Promise<JWK[]> {
+    const config = getConfig();
     const now = new Date();
+
+    // Calculate the cutoff date for verification
+    // Keys are valid for verification if: expiresAt + verifyingTtl > now
+    // Which can be rewritten as: expiresAt > now - verifyingTtl
+    const cutoffDate = new Date(now);
+    cutoffDate.setHours(cutoffDate.getHours() - config.jwksKeyVerifyingTtlHours);
+
+    // Fetch keys that are still valid for verification (filtered at DB level)
     const validKeys = await this.keyRepository.find({
       where: {
-        expiresAt: MoreThan(now),
+        expiresAt: MoreThan(cutoffDate),
       },
       order: {
         createdAt: 'DESC',
