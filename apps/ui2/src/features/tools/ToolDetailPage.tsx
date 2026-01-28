@@ -1,21 +1,46 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
-import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
-import { Tool, ToolScope, ToolClient } from './types';
+import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
+
+// Helper to get status color and label
+function getAuthStatusDisplay(status: string): { color: 'gray' | 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'purple', label: string } {
+  switch (status) {
+    case 'AUTHORIZATION_CODE_EXCHANGED':
+      return { color: 'green', label: 'Active' };
+    case 'USER_CONSENT_REJECTED':
+      return { color: 'red', label: 'Rejected' };
+    case 'AUTHORIZATION_CODE_ISSUED':
+      return { color: 'blue', label: 'Code Issued' };
+    case 'mcp_auth_flow_started':
+      return { color: 'yellow', label: 'Flow Started' };
+    case 'mcp_auth_flow_completed':
+      return { color: 'blue', label: 'MCP Auth Complete' };
+    case 'CONNECTIONS_FLOW_STARTED':
+      return { color: 'yellow', label: 'Connecting' };
+    case 'CONNECTIONS_FLOW_COMPLETED':
+      return { color: 'blue', label: 'Connected' };
+    case 'not_started':
+      return { color: 'gray', label: 'Not Started' };
+    default:
+      return { color: 'gray', label: status.replace(/_/g, ' ').toLowerCase() };
+  }
+}
 
 export function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
   const navigate = useNavigate();
-  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients } = useToolsCtx();
+  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations } = useToolsCtx();
 
   // Find tool from context first (for quick load)
   const toolFromList = tools.find(t => t.id === toolId);
   const [tool, setTool] = useState<Tool | null>(toolFromList || null);
   const [scopes, setScopes] = useState<ToolScope[]>([]);
   const [clients, setClients] = useState<ToolClient[]>([]);
+  const [authorizations, setAuthorizations] = useState<ToolAuthorization[]>([]);
   const [isLoading, setIsLoading] = useState(!toolFromList);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
@@ -40,13 +65,14 @@ export function ToolDetailPage() {
     }
   }, [toolId, toolFromList, loadToolDetails]);
 
-  // Load scopes and clients when tool is available
+  // Load scopes, clients, and authorizations when tool is available
   useEffect(() => {
     if (tool && toolId) {
       loadToolScopes(toolId).then(setScopes);
       loadToolClients(toolId).then(setClients);
+      loadToolAuthorizations(toolId).then(setAuthorizations);
     }
-  }, [tool, toolId, loadToolScopes, loadToolClients]);
+  }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
 
   // Set section title for IosShell
   useEffect(() => {
@@ -205,18 +231,52 @@ export function ToolDetailPage() {
 
 
 
-      {/* Clients */}
-      <DataRowContainer title="Clients" className="tool-detail-page__section">
-        <DataRow
-          onClick={() => navigate(`/tools/tool/${tool.id}/clients`)}
-        >
-          <Text tone="muted" size="2">
-            {clients.length === 0
-              ? 'No OAuth clients configured'
-              : `${clients.length} OAuth client${clients.length === 1 ? '' : 's'} configured`}
-          </Text>
-          <Text size="2" tone="muted">Tap to view clients</Text>
-        </DataRow>
+      {/* Authorizations */}
+      <DataRowContainer title="Authorizations" className="tool-detail-page__section">
+        {authorizations.length === 0 ? (
+          <DataRow>
+            <Text tone="muted" size="2">
+              No active authorizations
+            </Text>
+          </DataRow>
+        ) : (
+          authorizations.map(auth => {
+            const statusDisplay = getAuthStatusDisplay(auth.status);
+            const connectedAt = elapsedTime(auth.createdAt);
+
+            return (
+              <DataRow key={auth.id}>
+                {/* Client name */}
+                <Text weight="medium" size="3">
+                  {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
+                </Text>
+
+                {/* Actor connection info */}
+                {auth.actor && (
+                  <Text size="2" tone="muted">
+                    @{auth.actor.slug} connected {connectedAt}
+                  </Text>
+                )}
+
+                {/* Status tag */}
+                <div style={{ marginTop: '4px' }}>
+                  <Chip color={statusDisplay.color}>
+                    {statusDisplay.label}
+                  </Chip>
+                </div>
+
+                {/* Permissions requested */}
+                {auth.mcpAuthorizationFlow.scope && (
+                  <div style={{ marginTop: '4px' }}>
+                    <Text size="2" tone="muted">
+                      Permissions: {auth.mcpAuthorizationFlow.scope}
+                    </Text>
+                  </div>
+                )}
+              </DataRow>
+            );
+          })
+        )}
       </DataRowContainer>
 
       {/* Back button */}
