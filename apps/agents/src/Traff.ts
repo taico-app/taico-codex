@@ -1,6 +1,7 @@
 // agentApiClient.ts
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
 import { CreateCommentDto } from "../../backend/src/tasks/dto/create-comment.dto.js";
+import { ProjectResponseDto } from "@taico/shared/client";
 
 export class Traff {
   constructor(
@@ -102,5 +103,31 @@ export class Traff {
       console.error(`Failed to post comment to task ${taskId}:`);
     }
     return;
+  }
+
+  async getProjectBySlug(slug: string): Promise<ProjectResponseDto | null> {
+    const url = `${this.baseUrl}/api/v1/meta/projects/by-slug/${encodeURIComponent(slug)}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { accept: "application/json", authorization: `Bearer ${this.accessToken}` },
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (res.status !== 200) {
+      throw new Error(
+        [
+          `[Traff] Failed to fetch project by slug.`,
+          `GET ${url}`,
+          `Expected 200, got ${res.status} ${res.statusText}`,
+        ].join("\n")
+      );
+    }
+
+    const project = await res.json() as ProjectResponseDto;
+    return project;
   }
 }

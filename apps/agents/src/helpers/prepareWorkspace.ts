@@ -9,19 +9,26 @@ const BASE_DIR = WORK_DIR;
 export async function prepareWorkspace(
   taskId: string,
   agentId: string,
+  repoUrl?: string | null,
 ) {
   console.log(`prepping workspace for agent '${agentId}' to work on task '${taskId}'`);
-  const workDir = join(BASE_DIR, taskId, agentId);
-  const repoDir = join(workDir, "repo");
+  let workDir = join(BASE_DIR, taskId, agentId);
 
-  // Ensure directories exist
+  // Ensure base directory exists
   mkdirSync(workDir, { recursive: true });
 
-  // Ensure repo exists inside workspace
-  await ensureRepo(REPO, repoDir);
+  // If no repoUrl provided, just return the base workDir
+  if (!repoUrl) {
+    console.log(`no repo url provided, using base workDir: ${workDir}`);
+    return workDir;
+  }
 
-  return {
-    workDir,
-    repoDir,
-  };
+  // If repoUrl provided, update workDir to point to the repo path
+  workDir = join(workDir, "repo");
+  console.log(`using repo: ${repoUrl}`);
+
+  // Ensure repo exists at the workDir location
+  await ensureRepo(repoUrl, workDir);
+
+  return workDir;
 }
