@@ -1,0 +1,15 @@
+.context-home__loading,
+.context-home__error,
+.context-home__empty {
+  padding: var(--space-5);
+  text-align: center;
+  font-size: var(--fs-3);
+}
+
+.context-home__error {
+  color: var(--danger);
+}
+
+.context-home__empty {
+  color: var(--text-muted);
+}
