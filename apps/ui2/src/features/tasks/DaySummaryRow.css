@@ -1,0 +1,25 @@
+.day-summary-row {
+  cursor: pointer;
+  background-color: var(--surface);
+}
+
+.day-summary-row:hover {
+  opacity: 0.9;
+}
+
+.day-summary-row__content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.day-summary-row__chevron {
+  font-size: var(--fs-1);
+  color: var(--text-muted);
+  width: 16px;
+  display: inline-block;
+}
+
+.day-summary-row__count {
+  margin-left: var(--space-1);
+}
