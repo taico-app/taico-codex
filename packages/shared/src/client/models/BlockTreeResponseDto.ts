@@ -2,21 +2,25 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type PageTreeResponseDto = {
+export type BlockTreeResponseDto = {
     /**
-     * Unique identifier for the page
+     * Unique identifier for the block
      */
     id: string;
     /**
-     * Title of the wiki page
+     * Title of the context block
      */
     title: string;
     /**
-     * Author of the wiki page
+     * Actor ID of the block creator
      */
-    author: string;
+    createdByActorId: string;
     /**
-     * Parent page ID (null if root page)
+     * Creator slug from the associated actor
+     */
+    createdBy: string | null;
+    /**
+     * Parent block ID (null if root block)
      */
     parentId: Record<string, any> | null;
     /**
@@ -24,9 +28,9 @@ export type PageTreeResponseDto = {
      */
     order: number;
     /**
-     * Child pages
+     * Child blocks
      */
-    children: Array<PageTreeResponseDto>;
+    children: Array<BlockTreeResponseDto>;
     /**
      * Creation timestamp
      */

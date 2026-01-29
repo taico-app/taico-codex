@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AppendPageDto = {
+export type ReorderBlockDto = {
     /**
-     * Markdown content to append to the existing page content
+     * New order position within siblings
      */
-    content: string;
+    newOrder: number;
 };
 

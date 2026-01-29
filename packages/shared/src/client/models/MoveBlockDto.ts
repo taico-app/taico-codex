@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateContextTagDto = {
+export type MoveBlockDto = {
     /**
-     * Name of the tag
+     * New parent page ID (null to move to root)
      */
-    name: string;
+    newParentId: Record<string, any> | null;
 };
 

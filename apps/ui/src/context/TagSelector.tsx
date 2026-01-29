@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import type { TagResponseDto } from 'shared';
-import { ContextService } from './api';
+import type { MetaTagResponseDto } from 'shared';
+import { MetaService, ContextService } from 'shared';
 
 interface TagSelectorProps {
   pageId: string;
@@ -8,7 +8,7 @@ interface TagSelectorProps {
 }
 
 export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) => {
-  const [allTags, setAllTags] = useState<TagResponseDto[]>([]);
+  const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3B82F6');
@@ -21,7 +21,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
 
   const loadAllTags = async () => {
     try {
-      const tags = await ContextService.contextControllerGetAllTags();
+      const tags = await MetaService.metaControllerGetAllTags();
       setAllTags(tags);
     } catch (error) {
       console.error('Failed to load tags:', error);
@@ -31,7 +31,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
   const handleAddExistingTag = async (tagName: string) => {
     try {
       setIsSubmitting(true);
-      await ContextService.contextControllerAddTagToPage(pageId, {
+      await ContextService.contextControllerAddTagToBlock(pageId, {
         name: tagName,
       });
       onTagAdded();
@@ -48,9 +48,8 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
 
     try {
       setIsSubmitting(true);
-      await ContextService.contextControllerAddTagToPage(pageId, {
+      await ContextService.contextControllerAddTagToBlock(pageId, {
         name: newTagName.trim(),
-        color: newTagColor,
       });
       setNewTagName('');
       setNewTagColor('#3B82F6');

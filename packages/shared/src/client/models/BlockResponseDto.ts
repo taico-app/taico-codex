@@ -3,25 +3,33 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ContextTagResponseDto } from './ContextTagResponseDto';
-export type PageSummaryDto = {
+export type BlockResponseDto = {
     /**
-     * Unique identifier for the page
+     * Unique identifier for the block
      */
     id: string;
     /**
-     * Title of the wiki page
+     * Title of the context block
      */
     title: string;
     /**
-     * Author of the wiki page
+     * Markdown content of the context block
      */
-    author: string;
+    content: string;
     /**
-     * Tags associated with the page
+     * Actor ID of the block creator
+     */
+    createdByActorId: string;
+    /**
+     * Creator slug from the associated actor
+     */
+    createdBy: string | null;
+    /**
+     * Tags associated with the block
      */
     tags: Array<ContextTagResponseDto>;
     /**
-     * Parent page ID (null if root page)
+     * Parent block ID (null if root block)
      */
     parentId: Record<string, any> | null;
     /**

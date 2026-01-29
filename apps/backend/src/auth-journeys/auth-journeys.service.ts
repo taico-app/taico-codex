@@ -31,8 +31,8 @@ export class AuthJourneysService {
     @InjectRepository(ConnectionAuthorizationFlowEntity)
     private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
 
-    private readonly mcpRegistryService: McpRegistryService
-  ) { }
+    private readonly mcpRegistryService: McpRegistryService,
+  ) {}
 
   /*
   Internal. Assumes mcp server and mcp client exist.
@@ -46,9 +46,10 @@ export class AuthJourneysService {
     mcpAuthorizationFlow: McpAuthorizationFlowEntity;
     connectionAuthorizationFlows: ConnectionAuthorizationFlowEntity[];
   }> {
-
     // Get the MCP Server
-    const mcpServer = await this.mcpRegistryService.getServerById(input.mcpServerId);
+    const mcpServer = await this.mcpRegistryService.getServerById(
+      input.mcpServerId,
+    );
 
     // Start an Auth journey
     const journey = this.authJourneyRepository.create({
@@ -66,14 +67,17 @@ export class AuthJourneysService {
     const savedFlow = await this.mcpAuthorizationFlowRepository.save(mcpFlow);
 
     // Start Connection Authorization Flows if the MCP Server has any connections
-    const connectionFlows = mcpServer.connections.map(connection => {
+    const connectionFlows = mcpServer.connections.map((connection) => {
       return this.connectionAuthorizationFlowRepository.create({
         authorizationJourneyId: savedJourney.id,
         mcpConnectionId: connection.id,
-      })
+      });
     });
 
-    const savedConnectionFlows = connectionFlows.length > 0 ? await this.connectionAuthorizationFlowRepository.save(connectionFlows) : [];
+    const savedConnectionFlows =
+      connectionFlows.length > 0
+        ? await this.connectionAuthorizationFlowRepository.save(connectionFlows)
+        : [];
 
     return {
       authorizationJourney: savedJourney,
@@ -85,25 +89,25 @@ export class AuthJourneysService {
   /*
   Debug. Gets all journeys for an MCP Server
   */
-  async getJourneysForMcpServer(mcpServerId: string): Promise<AuthJourneyEntity[]> {
-    const authJourneys = await this.authJourneyRepository.find(
-      {
-        where: {
-          mcpAuthorizationFlow: {
-            serverId: mcpServerId,
-          },
+  async getJourneysForMcpServer(
+    mcpServerId: string,
+  ): Promise<AuthJourneyEntity[]> {
+    const authJourneys = await this.authJourneyRepository.find({
+      where: {
+        mcpAuthorizationFlow: {
+          serverId: mcpServerId,
         },
-        relations: {
-          actor: true,
-          mcpAuthorizationFlow: {
-            client: {}
-          },
-          connectionAuthorizationFlows: {
-            mcpConnection: {}
-          },
-        }
-      }
-    )
+      },
+      relations: {
+        actor: true,
+        mcpAuthorizationFlow: {
+          client: {},
+        },
+        connectionAuthorizationFlows: {
+          mcpConnection: {},
+        },
+      },
+    });
     return authJourneys;
   }
 
@@ -114,7 +118,7 @@ export class AuthJourneysService {
   async findMcpAuthFlowByClientAndServer(
     clientId: string,
     serverId: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<McpAuthorizationFlowEntity | null> {
     return this.mcpAuthorizationFlowRepository.findOne({
       where: {
@@ -131,7 +135,7 @@ export class AuthJourneysService {
   */
   async findMcpAuthFlowById(
     flowId: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<McpAuthorizationFlowEntity | null> {
     return this.mcpAuthorizationFlowRepository.findOne({
       where: { id: flowId },
@@ -145,7 +149,7 @@ export class AuthJourneysService {
   */
   async findMcpAuthFlowByAuthorizationCode(
     authorizationCode: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<McpAuthorizationFlowEntity | null> {
     return this.mcpAuthorizationFlowRepository.findOne({
       where: { authorizationCode },
@@ -157,7 +161,9 @@ export class AuthJourneysService {
   Public API: Save/update MCP authorization flow
   Used by AuthorizationService and TokenService to update flow state
   */
-  async saveMcpAuthFlow(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<McpAuthorizationFlowEntity> {
+  async saveMcpAuthFlow(
+    mcpAuthFlow: McpAuthorizationFlowEntity,
+  ): Promise<McpAuthorizationFlowEntity> {
     return this.mcpAuthorizationFlowRepository.save(mcpAuthFlow);
   }
 
@@ -167,7 +173,7 @@ export class AuthJourneysService {
   */
   async getConnectionFlowsForJourney(
     journeyId: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<ConnectionAuthorizationFlowEntity[]> {
     return this.connectionAuthorizationFlowRepository.find({
       where: { authorizationJourneyId: journeyId },
@@ -181,7 +187,7 @@ export class AuthJourneysService {
   */
   async findConnectionFlowByState(
     state: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<ConnectionAuthorizationFlowEntity | null> {
     return this.connectionAuthorizationFlowRepository.findOne({
       where: { state },
@@ -194,7 +200,7 @@ export class AuthJourneysService {
   Used by downstream auth flow to update connection state
   */
   async saveConnectionFlow(
-    connectionFlow: ConnectionAuthorizationFlowEntity
+    connectionFlow: ConnectionAuthorizationFlowEntity,
   ): Promise<ConnectionAuthorizationFlowEntity> {
     return this.connectionAuthorizationFlowRepository.save(connectionFlow);
   }
@@ -205,7 +211,7 @@ export class AuthJourneysService {
   */
   async findMcpAuthFlowByJourneyId(
     journeyId: string,
-    relations?: string[]
+    relations?: string[],
   ): Promise<McpAuthorizationFlowEntity | null> {
     return this.mcpAuthorizationFlowRepository.findOne({
       where: { authorizationJourneyId: journeyId },
@@ -217,13 +223,15 @@ export class AuthJourneysService {
   Public API: Save/update auth journey
   Used to update the auth journey entity
   */
-  async saveAuthJourney(authJourney: AuthJourneyEntity): Promise<AuthJourneyEntity> {
+  async saveAuthJourney(
+    authJourney: AuthJourneyEntity,
+  ): Promise<AuthJourneyEntity> {
     return this.authJourneyRepository.save(authJourney);
   }
 
   async updateAuthJourneyStatus(
     journeyId: string,
-    status: AuthJourneyStatus
+    status: AuthJourneyStatus,
   ): Promise<void> {
     await this.authJourneyRepository.update(journeyId, { status });
   }

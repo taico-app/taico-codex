@@ -11,18 +11,16 @@ import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
-  PageCreatedEvent,
-  PageUpdatedEvent,
-  PageDeletedEvent,
+  BlockCreatedEvent,
+  BlockUpdatedEvent,
+  BlockDeletedEvent,
 } from './events/context.events';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { ContextScopes } from './context.scopes';
 
-
 const CONTEXT_ROOM = 'context';
-
 
 /**
  * WebSocket gateway for Context domain.
@@ -38,7 +36,8 @@ const CONTEXT_ROOM = 'context';
   namespace: '/context',
 })
 export class ContextGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -55,8 +54,8 @@ export class ContextGateway
   }
 
   /*
-     * Room implementation
-     */
+   * Room implementation
+   */
 
   @SubscribeMessage('context.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
@@ -70,18 +69,20 @@ export class ContextGateway
     return { ok: true };
   }
 
-  @OnEvent('page.created')
-  handlePageCreated(event: PageCreatedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('page.created', event.page);
+  @OnEvent('block.created')
+  handlePageCreated(event: BlockCreatedEvent) {
+    this.server.to(CONTEXT_ROOM).emit('block.created', event.block);
   }
 
-  @OnEvent('page.updated')
-  handlePageUpdated(event: PageUpdatedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('page.updated', event.page);
+  @OnEvent('block.updated')
+  handlePageUpdated(event: BlockUpdatedEvent) {
+    this.server.to(CONTEXT_ROOM).emit('block.updated', event.block);
   }
 
-  @OnEvent('page.deleted')
-  handlePageDeleted(event: PageDeletedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('page.deleted', { pageId: event.pageId });
+  @OnEvent('block.deleted')
+  handlePageDeleted(event: BlockDeletedEvent) {
+    this.server
+      .to(CONTEXT_ROOM)
+      .emit('block.deleted', { blockId: event.blockId });
   }
 }
