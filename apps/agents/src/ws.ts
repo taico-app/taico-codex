@@ -12,6 +12,15 @@ We'll start easy using the existing websocket endpoints for tasks and see what w
 import { io, Socket } from "socket.io-client";
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
 import { ACCESS_TOKEN } from "./helpers/config.js";
+import {
+  TaskWireEvents,
+  TaskCreatedWireEvent,
+  TaskAssignedWireEvent,
+  TaskStatusChangedWireEvent,
+  TaskUpdatedWireEvent,
+  TaskDeletedWireEvent,
+  TaskCommentedWireEvent,
+} from "shared/types/task-events";
 
 type TaskHandler = (task: TaskEntity, loopBack: (message: string) => void) => void;
 
@@ -53,33 +62,33 @@ export class TasksListener {
 
     // ---- events we care about ----
 
-    this.socket.on("task.created", (task: TaskEntity) => {
+    this.socket.on(TaskWireEvents.TASK_CREATED, (event: TaskCreatedWireEvent) => {
       console.log("[task.created]");
-      this.onTask(task, this.postActivity);
+      this.onTask(event.payload as TaskEntity, this.postActivity);
     });
 
-    this.socket.on("task.assigned", (task: TaskEntity) => {
+    this.socket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) => {
       console.log("[task.assigned]");
-      this.onTask(task, this.postActivity);
+      this.onTask(event.payload as TaskEntity, this.postActivity);
     });
 
-    this.socket.on("task.status_changed", (task: TaskEntity) => {
+    this.socket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) => {
       console.log("[task.status_changed]");
-      this.onTask(task, this.postActivity);
+      this.onTask(event.payload as TaskEntity, this.postActivity);
     });
 
     // ---- events we ignore (for now) ----
 
-    this.socket.on("task.updated", () => {
-      console.log("[task.updated] ignored");
+    this.socket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) => {
+      console.log("[task.updated] ignored", event.payload);
     });
 
-    this.socket.on("task.deleted", (payload) => {
-      console.log("[task.deleted] ignored", payload);
+    this.socket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) => {
+      console.log("[task.deleted] ignored", event.payload);
     });
 
-    this.socket.on("task.commented", () => {
-      console.log("[task.commented] ignored");
+    this.socket.on(TaskWireEvents.TASK_COMMENTED, (event: TaskCommentedWireEvent) => {
+      console.log("[task.commented] ignored", event.payload);
     });
   }
 

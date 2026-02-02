@@ -8,6 +8,15 @@ import { io, Socket } from "socket.io-client";
 import { CommentEntity } from "../../backend/src/tasks/comment.entity.js";
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
 import { EventActor } from "../../backend/src/tasks/events/tasks.events.js";
+import {
+  TaskWireEvents,
+  TaskCreatedWireEvent,
+  TaskAssignedWireEvent,
+  TaskStatusChangedWireEvent,
+  TaskUpdatedWireEvent,
+  TaskDeletedWireEvent,
+  TaskCommentedWireEvent,
+} from "shared/types/task-events";
 
 export type TaskEvent =
   | { type: "created"; actorId: string; task: TaskEntity }
@@ -142,29 +151,26 @@ export class SocketIOTasksTransport implements TasksTransport {
     });
 
     // ----- events we care about -----
-    // this.socket.on("task.created", (task: TaskEntity) => this.emit({ type: "created", task }));
-    // this.socket.on("task.assigned", (task: TaskEntity) => this.emit({ type: "assigned", task }));
-    // this.socket.on("task.status_changed", (task: TaskEntity) => this.emit({ type: "status_changed", task }));
-    // this.socket.on("task.updated", (task: TaskEntity) => this.emit({ type: "updated", task }));
+    // Using shared wire event types from @taico/shared
+    // These types ensure consistency between backend emission and frontend/agent reception
 
-    this.socket.on("task.created", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "created", actorId: actor.id, task })
+    this.socket.on(TaskWireEvents.TASK_CREATED, (event: TaskCreatedWireEvent) =>
+      this.emit({ type: "created", actorId: event.actor.id, task: event.payload as TaskEntity })
     );
-    this.socket.on("task.assigned", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "assigned", actorId: actor.id, task })
+    this.socket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) =>
+      this.emit({ type: "assigned", actorId: event.actor.id, task: event.payload as TaskEntity })
     );
-    this.socket.on("task.status_changed", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "status_changed", actorId: actor.id, task })
+    this.socket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) =>
+      this.emit({ type: "status_changed", actorId: event.actor.id, task: event.payload as TaskEntity })
     );
-    this.socket.on("task.updated", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "updated", actorId: actor.id, task })
+    this.socket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) =>
+      this.emit({ type: "updated", actorId: event.actor.id, task: event.payload as TaskEntity })
     );
-    this.socket.on("task.deleted", ({taskId}: {taskId: string}, actor: EventActor) =>
-      this.emit({ type: "deleted", actorId: actor.id, taskId })
+    this.socket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) =>
+      this.emit({ type: "deleted", actorId: event.actor.id, taskId: event.payload.taskId })
     );
-    this.socket.on("comment.added", (comment: CommentEntity, actor: EventActor) =>
-      this.emit({ type: "commented", actorId: actor.id, comment })
-
+    this.socket.on(TaskWireEvents.TASK_COMMENTED, (event: TaskCommentedWireEvent) =>
+      this.emit({ type: "commented", actorId: event.actor.id, comment: event.payload as CommentEntity })
     );
 
     // Wait until first connect or error so callers can await start()
