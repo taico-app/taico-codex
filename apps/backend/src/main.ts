@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './config/cli-env';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -50,6 +51,11 @@ async function bootstrap() {
   const help = args.includes('--help') || args.includes('-h');
   const serverMode = args.includes('--server');
   const generateOpenApiMode = args.includes('--generate-openapi');
+  const cliPort = readCliOption(args, '--port');
+
+  if (cliPort && !process.env.ISSUER_URL) {
+    process.env.BACKEND_PORT = cliPort;
+  }
 
   if (help) {
     printUsage();
@@ -62,7 +68,7 @@ async function bootstrap() {
     );
   }
 
-  const app = await createConfiguredApp();
+  const app = await createConfiguredApp(AppModule);
 
   if (generateOpenApiMode) {
     await generateOpenApi(app);
@@ -104,14 +110,15 @@ async function bootstrap() {
   }
 
   const config = getConfig();
-  const cliPort = readCliOption(args, '--port');
   const port = cliPort ? Number(cliPort) : config.port;
 
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 
-async function createConfiguredApp(): Promise<NestExpressApplication> {
+async function createConfiguredApp(
+  AppModule: typeof import('./app.module').AppModule,
+): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
