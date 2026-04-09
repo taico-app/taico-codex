@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
 import { useExecutions } from "./useExecutions";
@@ -10,6 +11,7 @@ import type {
 import "./ExecutionsPage.css";
 
 export function ExecutionsPage() {
+  const navigate = useNavigate();
   const {
     queue,
     active,
@@ -98,7 +100,7 @@ export function ExecutionsPage() {
                   key: entry.taskId,
                   cells: [
                     <StatusPill key="state" tone="accent">Queued</StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <StatusPill key="status" tone={taskStatusTone(entry.taskStatus)}>
                       {entry.taskStatus ?? "Unknown"}
                     </StatusPill>,
@@ -114,6 +116,7 @@ export function ExecutionsPage() {
                         { label: "Task status", value: entry.taskStatus ?? "Unknown" },
                         { label: "Task ID", value: shortId(entry.taskId), mono: true },
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -133,7 +136,7 @@ export function ExecutionsPage() {
                   key: entry.id,
                   cells: [
                     <StatusPill key="state" tone="warning">Active</StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <CodeCell key="worker" value={entry.workerClientId} />,
                     <CodeCell key="agent" value={entry.agentActorId} />,
                     <TimeCell key="claimed" value={entry.claimedAt} />,
@@ -155,6 +158,7 @@ export function ExecutionsPage() {
                         { label: "Agent", value: shortId(entry.agentActorId), mono: true },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -183,7 +187,7 @@ export function ExecutionsPage() {
                     <StatusPill key="result" tone={entry.status === "SUCCEEDED" ? "success" : "danger"}>
                       {entry.status}
                     </StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <TimeCell key="transitioned" value={entry.transitionedAt} />,
                     <StatusPill key="task-status" tone={taskStatusTone(entry.taskStatus)}>
                       {entry.taskStatus ?? "Unknown"}
@@ -212,6 +216,7 @@ export function ExecutionsPage() {
                           ? [{ label: "Message", value: entry.errorMessage }]
                           : []),
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -346,10 +351,26 @@ function StatusPill({
 function TaskCell({
   taskId,
   taskName,
+  onClick,
 }: {
   taskId: string;
   taskName: string | null;
+  onClick?: () => void;
 }) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="executions-task-cell executions-task-cell--clickable"
+        onClick={onClick}
+        aria-label={`Navigate to task: ${taskName ?? "Untitled task"}`}
+      >
+        <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
+        <Text as="div" size="1" tone="muted" style="mono">{shortId(taskId)}</Text>
+      </button>
+    );
+  }
+
   return (
     <div className="executions-task-cell">
       <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
@@ -441,14 +462,20 @@ function ExecutionMobileCard({
   badge,
   tone,
   lines,
+  onClick,
 }: {
   title: string;
   badge: string;
   tone: "accent" | "warning" | "success" | "danger";
   lines: Array<{ label: string; value: string; mono?: boolean }>;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="executions-mobile-card">
+  const className = onClick
+    ? "executions-mobile-card executions-mobile-card--clickable"
+    : "executions-mobile-card";
+
+  const CardContent = (
+    <>
       <div className="executions-mobile-card__header">
         <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
         <StatusPill tone={tone}>{badge}</StatusPill>
@@ -468,6 +495,25 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={onClick}
+        aria-label={`Navigate to task: ${title}`}
+      >
+        {CardContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {CardContent}
     </div>
   );
 }
