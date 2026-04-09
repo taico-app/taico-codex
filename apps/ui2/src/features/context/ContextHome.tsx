@@ -31,24 +31,57 @@ export function ContextHome(): JSX.Element {
   }
 
   if (blocks.length === 0) {
-    return <div className="context-home__empty">No context blocks found</div>;
+    return (
+      <>
+        <div className="context-home__empty">
+          <div className="context-home__empty-message">No context blocks found</div>
+        </div>
+        <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+      </>
+    );
   }
 
   if (isDesktop) {
     return (
-      <DesktopContextHome
-        blocks={blocks}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
-      />
+      <>
+        <DesktopContextHome
+          blocks={blocks}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
+        />
+        <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+      </>
     );
   }
 
   return (
-    <div className="context-home">
-      <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
-    </div>
+    <>
+      <div className="context-home">
+        <ContextBlockTree
+          blocks={blocks}
+          onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
+          onAddChild={(parentId) => navigate(`/context/new?parentId=${parentId}`)}
+        />
+      </div>
+      <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+    </>
+  );
+}
+
+function ContextFab({ onClick, isDesktop }: { onClick: () => void; isDesktop: boolean }): JSX.Element {
+  if (isDesktop) {
+    return (
+      <button className="context-fab context-fab--desktop" type="button" onClick={onClick}>
+        <span className="context-fab__plus">+</span>
+        <span className="context-fab__label">New block</span>
+      </button>
+    );
+  }
+  return (
+    <button className="context-fab" type="button" onClick={onClick} aria-label="Create new block">
+      +
+    </button>
   );
 }
 
