@@ -39,6 +39,10 @@ export const INTERNAL_WORKER_AUTH_SCOPES: Scope[] = [
     id: 'meta:read',
     description: 'Read meta information (tags, etc.)',
   },
+  {
+    id: 'mcp-registry:read',
+    description: 'Allows workers to read MCP server registry metadata.',
+  },
 ];
 
 export const DEFAULT_AGENT_TOKEN_SCOPES = [
@@ -57,3 +61,5 @@ export const DEFAULT_AGENT_TOKEN_SCOPES = [
   'mcp:use',
   'secret:read',
 ] as const;
+
+export * from './agent-runtime-permissions.js';

@@ -1,10 +1,12 @@
 import { RunAssignedWireEvent, StopRequestedWireEvent } from '@taico/events';
 import { prepareWorkspace } from './helpers/prepare-workspace';
 import { getSession, setSession } from './helpers/session-store';
+import { EXECUTION_ID_HEADER } from '../auth/guards/constants/headers.constants';
 import { ClaudeAgentRunner } from './runners/claude-agent-runner';
 import { OpencodeAgentRunner } from './runners/opencode-agent-runner';
-import { AgentRunner } from './runners/agent-runner.types';
+import { AgentRunner, RuntimeMcpServerConfig } from './runners/agent-runner.types';
 import { WorkerGatewayClient } from './worker-gateway-client';
+import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 
 type ExecutionOrchestratorOptions = {
   serverUrl: string;
@@ -41,6 +43,30 @@ type AgentResponse = {
 
 type AgentListResponse = {
   items: AgentResponse[];
+};
+
+type AgentToolPermissionScopeResponse = {
+  id: string;
+  description: string;
+};
+
+type AgentToolPermissionResponse = {
+  server: {
+    id: string;
+    providedId: string;
+    type: 'http' | 'stdio';
+  };
+  grantedScopes: AgentToolPermissionScopeResponse[];
+  hasAllScopes: boolean;
+};
+
+type McpServerResponse = {
+  id: string;
+  providedId: string;
+  type: 'http' | 'stdio';
+  url?: string;
+  cmd?: string;
+  args?: string[];
 };
 
 type ProjectResponse = {
@@ -110,7 +136,18 @@ export class ExecutionOrchestrator {
       throw new Error(`Agent @${agent.slug} has no system prompt configured`);
     }
 
+    const permissions = await this.fetchAgentToolPermissions(agent.actorId);
+    const serversById = await this.fetchMcpServersById(permissions);
     const executionToken = await this.requestExecutionToken(agent.slug);
+    const runtimeMcpServers = this.buildRuntimeMcpServers(
+      permissions,
+      serversById,
+      executionToken,
+      event.executionId,
+    );
+    const allowedTools = deriveAllowedToolsFromProvidedIds(
+      Object.keys(runtimeMcpServers),
+    );
     const repoUrl = await this.resolveRepoUrl(task.tags ?? []);
     const workspaceDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
     const thread = await this.fetchThreadByTaskId(task.id);
@@ -130,6 +167,8 @@ export class ExecutionOrchestrator {
         baseUrl: this.options.serverUrl,
         resume: getSession(agent.actorId, task.id) ?? undefined,
         agentSlug: agent.slug,
+        mcpServers: runtimeMcpServers,
+        allowedTools,
         options: {
           model:
             agent.providerId && agent.modelId
@@ -225,13 +264,73 @@ export class ExecutionOrchestrator {
       {
         method: 'POST',
         body: JSON.stringify({
-          scopes: ['tasks:read', 'tasks:write', 'context:read', 'context:write'],
           expirationSeconds: 3600,
         }),
       },
     );
 
     return response.token;
+  }
+
+  private async fetchAgentToolPermissions(
+    actorId: string,
+  ): Promise<AgentToolPermissionResponse[]> {
+    return this.fetchJson<AgentToolPermissionResponse[]>(
+      `/api/v1/agents/${actorId}/tool-permissions`,
+    );
+  }
+
+  private async fetchMcpServersById(
+    permissions: AgentToolPermissionResponse[],
+  ): Promise<Map<string, McpServerResponse>> {
+    const serverIds = Array.from(
+      new Set(permissions.map((permission) => permission.server.id)),
+    );
+    const servers = await Promise.all(
+      serverIds.map((serverId) =>
+        this.fetchJson<McpServerResponse>(`/api/v1/mcp/servers/${serverId}`),
+      ),
+    );
+    return new Map(servers.map((server) => [server.id, server]));
+  }
+
+  private buildRuntimeMcpServers(
+    permissions: AgentToolPermissionResponse[],
+    serversById: Map<string, McpServerResponse>,
+    accessToken: string,
+    executionId: string,
+  ): Record<string, RuntimeMcpServerConfig> {
+    const runtimeMcpServers: Record<string, RuntimeMcpServerConfig> = {};
+
+    for (const permission of permissions) {
+      const providedId = permission.server.providedId;
+      const server = serversById.get(permission.server.id);
+      if (!server) {
+        continue;
+      }
+
+      if (server.type === 'http' && server.url) {
+        runtimeMcpServers[providedId] = {
+          type: 'http',
+          url: server.url,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            [EXECUTION_ID_HEADER]: executionId,
+          },
+        };
+        continue;
+      }
+
+      if (server.type === 'stdio' && server.cmd) {
+        runtimeMcpServers[providedId] = {
+          type: 'stdio',
+          command: server.cmd,
+          args: server.args ?? [],
+        };
+      }
+    }
+
+    return runtimeMcpServers;
   }
 
   private async resolveRepoUrl(tags: TaskTag[]): Promise<string | null> {

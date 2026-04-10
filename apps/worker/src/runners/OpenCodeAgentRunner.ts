@@ -5,6 +5,19 @@ import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageForm
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
+type OpenCodeMcpServerConfig =
+  | {
+      type: 'remote';
+      url: string;
+      headers: Record<string, string>;
+      enabled: true;
+    }
+  | {
+      type: 'local';
+      command: string[];
+      enabled: true;
+    };
+
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
 
@@ -107,26 +120,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           timeout: 20 * 3600,
           signal: this.abortController.signal,
           config: {
-            mcp: {
-              tasks: {
-                type: "remote",
-                url: `${baseUrl}/api/v1/tasks/tasks/mcp`,
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  [EXECUTION_ID_HEADER]: executionId,
-                },
-                enabled: true,
-              },
-              context: {
-                type: "remote",
-                url: `${baseUrl}/api/v1/context/blocks/mcp`,
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  [EXECUTION_ID_HEADER]: executionId,
-                },
-                enabled: true,
-              }
-            }
+            mcp: this.buildMcpConfig({ executionId, baseUrl, accessToken }),
           }
         });
 
@@ -150,6 +144,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
+    this.runtimeMcpServers = ctx.mcpServers;
 
     // Start client
     await this.initBullshit({
@@ -228,8 +223,62 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     console.log('shutting down Opencode client');
     this.shutdown();
+    this.runtimeMcpServers = undefined;
     console.log('returning final result');
 
     return finalResult;
   }
+
+  private buildMcpConfig({
+    executionId,
+    baseUrl,
+    accessToken,
+  }: {
+    executionId: string;
+    baseUrl: string;
+    accessToken: string;
+  }): Record<string, OpenCodeMcpServerConfig> {
+    const runtimeMcpServers =
+      this.runtimeMcpServers ?? {
+        tasks: {
+          type: 'http' as const,
+          url: `${baseUrl}/api/v1/tasks/tasks/mcp`,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            [EXECUTION_ID_HEADER]: executionId,
+          },
+        },
+        context: {
+          type: 'http' as const,
+          url: `${baseUrl}/api/v1/context/blocks/mcp`,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            [EXECUTION_ID_HEADER]: executionId,
+          },
+        },
+      };
+
+    const config: Record<string, OpenCodeMcpServerConfig> = {};
+    for (const [providedId, server] of Object.entries(runtimeMcpServers)) {
+      if (server.type === 'http') {
+        config[providedId] = {
+          type: 'remote',
+          url: server.url,
+          headers: server.headers,
+          enabled: true,
+        };
+        continue;
+      }
+
+      config[providedId] = {
+        type: 'local',
+        command: [server.command, ...server.args],
+        enabled: true,
+      };
+    }
+
+    return config;
+  }
+
+  private runtimeMcpServers?: AgentRunContext['mcpServers'];
 }

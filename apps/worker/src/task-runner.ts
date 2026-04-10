@@ -1,8 +1,10 @@
 import { ApiClient } from '@taico/client/v2';
-import { DEFAULT_AGENT_TOKEN_SCOPES } from '@taico/shared';
+import { AgentToolPermissionResponseDto, ServerResponseDto } from '@taico/client/v2';
+import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
+import { EXECUTION_ID_HEADER } from './helpers/config.js';
 import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
-import { AgentModelConfig } from './runners/AgentRunner.js';
+import { AgentModelConfig, RuntimeMcpServerConfig } from './runners/AgentRunner.js';
 import { ClaudeAgentRunner } from './runners/ClaudeAgentRunner.js';
 import { OpencodeAgentRunner } from './runners/OpenCodeAgentRunner.js';
 import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
@@ -79,14 +81,29 @@ export async function executeTask({
 
   const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
 
+  const permissions =
+    await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions({
+      actorId: agent.actorId,
+    });
+  const serversById = await fetchMcpServersById(workerClient, permissions);
+  const runtimeMcpServers = buildRuntimeMcpServers(
+    permissions,
+    serversById,
+    executionId,
+  );
+  const allowedTools = deriveAllowedToolsFromProvidedIds(
+    Object.keys(runtimeMcpServers),
+  );
+
   // Get an access token for the agent
   const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
     slug: agent.slug,
     body: {
-      scopes: [...DEFAULT_AGENT_TOKEN_SCOPES],
       expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
     }
   });
+
+  attachRuntimeAuthHeaders(runtimeMcpServers, agentToken.token);
 
   // Create runner
   let runner: BaseAgentRunner | null = null;
@@ -123,6 +140,8 @@ export async function executeTask({
         executionId,
         resume: undefined,
         agentSlug: agent.slug,
+        mcpServers: runtimeMcpServers,
+        allowedTools,
       },
       {
         onHeartbeat: async () => {
@@ -152,5 +171,73 @@ export async function executeTask({
     );
   } catch (error) {
     throw classifyRunnerError(error);
+  }
+}
+
+function buildRuntimeMcpServers(
+  permissions: AgentToolPermissionResponseDto[],
+  serversById: Map<string, ServerResponseDto>,
+  executionId: string,
+): Record<string, RuntimeMcpServerConfig> {
+  const mcpServers: Record<string, RuntimeMcpServerConfig> = {};
+
+  for (const permission of permissions) {
+    const providedId = permission.server.providedId;
+    const server = serversById.get(permission.server.id);
+    if (!server) {
+      continue;
+    }
+
+    if (server.type === 'http' && server.url) {
+      mcpServers[providedId] = {
+        type: 'http',
+        url: server.url,
+        headers: {
+          [EXECUTION_ID_HEADER]: executionId,
+        },
+      };
+      continue;
+    }
+
+    if (server.type === 'stdio' && server.cmd) {
+      mcpServers[providedId] = {
+        type: 'stdio',
+        command: server.cmd,
+        args: server.args ?? [],
+      };
+    }
+  }
+
+  return mcpServers;
+}
+
+async function fetchMcpServersById(
+  workerClient: ApiClient,
+  permissions: AgentToolPermissionResponseDto[],
+): Promise<Map<string, ServerResponseDto>> {
+  const serverIds = Array.from(
+    new Set(permissions.map((permission) => permission.server.id)),
+  );
+  const servers = await Promise.all(
+    serverIds.map((serverId) =>
+      workerClient.tools.McpRegistryController_getServer({ serverId }),
+    ),
+  );
+  return new Map(servers.map((server) => [server.id, server]));
+}
+
+function attachRuntimeAuthHeaders(
+  mcpServers: Record<string, RuntimeMcpServerConfig>,
+  accessToken: string,
+): void {
+  for (const server of Object.values(mcpServers)) {
+    if (server.type !== 'http') {
+      continue;
+    }
+
+    server.headers = {
+      ...server.headers,
+      Authorization: `Bearer ${accessToken}`,
+    };
   }
 }

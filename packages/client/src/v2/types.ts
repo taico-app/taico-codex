@@ -705,7 +705,6 @@ export interface AgentToolPermissionScopeResponseDto {
 
 export interface AgentToolPermissionResponseDto {
   server: AgentToolPermissionServerResponseDto;
-  availableScopes: AgentToolPermissionScopeResponseDto[];
   grantedScopes: AgentToolPermissionScopeResponseDto[];
   hasAllScopes: boolean;
 }
@@ -746,7 +745,7 @@ export interface IssuedAccessTokenResponseDto {
 }
 
 export interface RequestAgentExecutionTokenDto {
-  scopes: string[];
+  scopes?: string[];
   expirationSeconds?: number;
 }
 

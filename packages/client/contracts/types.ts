@@ -4295,8 +4295,6 @@ export interface components {
         };
         AgentToolPermissionResponseDto: {
             server: components["schemas"]["AgentToolPermissionServerResponseDto"];
-            /** @description All scopes currently available on this MCP server */
-            availableScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
             /** @description Subset of scopes granted to this agent for this server */
             grantedScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
             /**
@@ -4444,13 +4442,13 @@ export interface components {
         };
         RequestAgentExecutionTokenDto: {
             /**
-             * @description Scopes to grant to the short-lived execution token.
+             * @description Scopes to grant to the short-lived execution token. When omitted, scopes are derived from baseline system access plus assigned tool permissions.
              * @example [
              *       "tasks:read",
              *       "tasks:write"
              *     ]
              */
-            scopes: string[];
+            scopes?: string[];
             /**
              * @description Lifetime of the short-lived execution token in seconds. Defaults to the server MCP access token duration.
              * @example 600

@@ -10349,13 +10349,6 @@
           "server": {
             "$ref": "#/components/schemas/AgentToolPermissionServerResponseDto"
           },
-          "availableScopes": {
-            "description": "All scopes currently available on this MCP server",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentToolPermissionScopeResponseDto"
-            }
-          },
           "grantedScopes": {
             "description": "Subset of scopes granted to this agent for this server",
             "type": "array",
@@ -10371,7 +10364,6 @@
         },
         "required": [
           "server",
-          "availableScopes",
           "grantedScopes",
           "hasAllScopes"
         ]
@@ -10572,7 +10564,7 @@
         "type": "object",
         "properties": {
           "scopes": {
-            "description": "Scopes to grant to the short-lived execution token.",
+            "description": "Scopes to grant to the short-lived execution token. When omitted, scopes are derived from baseline system access plus assigned tool permissions.",
             "example": [
               "tasks:read",
               "tasks:write"
@@ -10589,10 +10581,7 @@
             "minimum": 1,
             "maximum": 3600
           }
-        },
-        "required": [
-          "scopes"
-        ]
+        }
       },
       "AgentExecutionTokenResponseDto": {
         "type": "object",

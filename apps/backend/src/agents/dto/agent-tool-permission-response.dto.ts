@@ -66,12 +66,6 @@ export class AgentToolPermissionResponseDto {
   server!: AgentToolPermissionServerResponseDto;
 
   @ApiProperty({
-    description: 'All scopes currently available on this MCP server',
-    type: [AgentToolPermissionScopeResponseDto],
-  })
-  availableScopes!: AgentToolPermissionScopeResponseDto[];
-
-  @ApiProperty({
     description: 'Subset of scopes granted to this agent for this server',
     type: [AgentToolPermissionScopeResponseDto],
   })
@@ -93,9 +87,6 @@ export class AgentToolPermissionResponseDto {
         description: record.serverDescription,
         type: record.serverType,
       },
-      availableScopes: record.availableScopes.map((scope) =>
-        AgentToolPermissionScopeResponseDto.fromRecord(scope),
-      ),
       grantedScopes: record.grantedScopes.map((scope) =>
         AgentToolPermissionScopeResponseDto.fromRecord(scope),
       ),
