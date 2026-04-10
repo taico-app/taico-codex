@@ -1,0 +1,42 @@
+.edit-agent-tool-permissions-pop__selected-tool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-2);
+}
+
+.edit-agent-tool-permissions-pop__scopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.edit-agent-tool-permissions-pop__scope-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-2);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.edit-agent-tool-permissions-pop__scope-item:hover {
+  background-color: var(--surface);
+}
+
+.edit-agent-tool-permissions-pop__scope-item input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.edit-agent-tool-permissions-pop__scope-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

@@ -5,8 +5,8 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chi
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import type { AgentResponseDto, ScopeDto, MetaTagResponseDto } from "@taico/client/v2";
-import { AgentTokensService, AuthorizationServerService, MetaService } from './api';
+import type { AgentResponseDto, ScopeDto, MetaTagResponseDto, AgentToolPermissionResponseDto } from "@taico/client/v2";
+import { AgentTokensService, AgentToolPermissionsService, AuthorizationServerService, MetaService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
@@ -48,6 +48,10 @@ export function AgentDetailPage() {
   // All tags for displaying tag triggers
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
+
+  // Tool permissions state
+  const [toolPermissions, setToolPermissions] = useState<AgentToolPermissionResponseDto[]>([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
@@ -98,6 +102,22 @@ export function AgentDetailPage() {
     }
   }, []);
 
+  // Load tool permissions for this agent
+  const loadToolPermissions = useCallback(async () => {
+    if (!agent) return;
+    setPermissionsLoading(true);
+    try {
+      const permissions = await AgentToolPermissionsService.AgentToolPermissionsController_listAgentToolPermissions({
+        actorId: agent.actorId,
+      });
+      setToolPermissions(permissions);
+    } catch (err) {
+      console.error('Failed to load tool permissions:', err);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  }, [agent]);
+
   // Load agent details if not in list
   useEffect(() => {
     if (!agentFromList && slug) {
@@ -114,13 +134,14 @@ export function AgentDetailPage() {
     }
   }, [slug, agentFromList, loadAgentDetails]);
 
-  // Load tokens when agent is loaded
+  // Load tokens, tags, and permissions when agent is loaded
   useEffect(() => {
     if (agent) {
       loadTokens();
       loadTags();
+      loadToolPermissions();
     }
-  }, [agent, loadTokens, loadTags]);
+  }, [agent, loadTokens, loadTags, loadToolPermissions]);
 
   // Load available scopes when create form is shown
   useEffect(() => {
@@ -399,6 +420,20 @@ export function AgentDetailPage() {
     ? Math.floor(concurrencyValue)
     : null;
   const tagColorsByName = new Map(allTags.map((tag) => [tag.name, tag.color]));
+  const systemToolCount = toolPermissions.filter((permission) =>
+    permission.server.providedId === 'tasks' || permission.server.providedId === 'context'
+  ).length;
+  const additionalToolCount = toolPermissions.length - systemToolCount;
+  const toolSummary = permissionsLoading
+    ? 'Loading tool permissions...'
+    : toolPermissions.length === 0
+      ? 'No tools configured'
+      : `${toolPermissions.length} ${toolPermissions.length === 1 ? 'tool' : 'tools'} configured`;
+  const toolSupportText = permissionsLoading
+    ? 'Checking assigned tools and scopes'
+    : toolPermissions.length === 0
+      ? 'Tasks and Context can be configured from the dedicated tools page.'
+      : `${systemToolCount} system ${systemToolCount === 1 ? 'tool' : 'tools'}, ${additionalToolCount} additional ${additionalToolCount === 1 ? 'tool' : 'tools'}`;
 
   return (
     <div className="agent-detail-page">
@@ -520,19 +555,19 @@ export function AgentDetailPage() {
         </DataRow>
       </DataRowContainer>
 
-      {/* Allowed Tools */}
-      {agent.allowedTools.length > 0 && (
-        <DataRowContainer className="agent-detail-page__section">
-          <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Allowed Tools ({agent.allowedTools.length})
-            </Text>
-            <Text tone="muted" size="2">
-              {agent.allowedTools.join(', ')}
-            </Text>
-          </DataRow>
-        </DataRowContainer>
-      )}
+      {/* Tool Permissions */}
+      <DataRowContainer
+        title="Tools"
+        className="agent-detail-page__section"
+      >
+        <DataRow onClick={() => navigate(`/agents/agent/${agent.slug}/tools`)}>
+          <Stack spacing="1">
+            <Text size="2" weight="medium">{toolSummary}</Text>
+            <Text size="1" tone="muted">{toolSupportText}</Text>
+          </Stack>
+          <Text size="1" tone="muted">tap to manage</Text>
+        </DataRow>
+      </DataRowContainer>
 
       {/* Newly Created Token Alert */}
       {newlyCreatedToken && (
