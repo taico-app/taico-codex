@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockSearchResultDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
+import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockSearchResultDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, ImportBlocksResponseDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
 
 export class ContextResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -26,6 +26,16 @@ export class ContextResource extends BaseClient {
     return this.request('GET', '/api/v1/context/blocks/tree', { signal: params?.signal });
   }
 
+  /** Export all context blocks as markdown zip */
+  async ContextController_exportBlocks(params?: { signal?: AbortSignal }): Promise<ArrayBuffer> {
+    return this.request('GET', '/api/v1/context/blocks/export', { responseType: 'arrayBuffer', signal: params?.signal });
+  }
+
+  /** Import context blocks from markdown zip */
+  async ContextController_importBlocks(params: { body: FormData; signal?: AbortSignal }): Promise<ImportBlocksResponseDto> {
+    return this.request('POST', '/api/v1/context/blocks/import', { body: params.body, bodyType: 'form-data', signal: params?.signal });
+  }
+
   /** Fetch a wiki page by ID */
   async ContextController_getBlock(params: { id: string; signal?: AbortSignal }): Promise<BlockResponseDto> {
     return this.request('GET', `/api/v1/context/blocks/${params.id}`, { signal: params?.signal });
@@ -38,7 +48,7 @@ export class ContextResource extends BaseClient {
 
   /** Delete a wiki page */
   async ContextController_deleteBlock(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/context/blocks/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/context/blocks/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Append content to an existing wiki page */
@@ -67,31 +77,31 @@ export class ContextResource extends BaseClient {
   }
 
   async ContextController_handleMcp_get(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('GET', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('GET', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_post(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('POST', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('POST', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_put(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('PUT', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('PUT', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_delete(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('DELETE', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_patch(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('PATCH', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('PATCH', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_options(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('OPTIONS', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('OPTIONS', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async ContextController_handleMcp_head(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('HEAD', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+    return this.request('HEAD', '/api/v1/context/blocks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
 }
