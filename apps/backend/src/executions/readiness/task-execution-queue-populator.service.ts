@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AgentsService } from '../../agents/agents.service';
 import { AgentResult } from '../../agents/dto/service/agents.service.types';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
 import { ReadinessCandidateRepository } from './readiness-candidate.repository';
+import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
 
 @Injectable()
 export class TaskExecutionQueuePopulatorService {
@@ -16,7 +18,8 @@ export class TaskExecutionQueuePopulatorService {
     private readonly taskExecutionQueueRepository: Repository<TaskExecutionQueueEntity>,
     private readonly agentsService: AgentsService,
     private readonly readinessCandidateRepository: ReadinessCandidateRepository,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   async populateTask(taskId: string): Promise<void> {
     const task = await this.readinessCandidateRepository.findCandidateTaskById(
@@ -61,6 +64,10 @@ export class TaskExecutionQueuePopulatorService {
     if (shouldBeQueued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
       await this.upsertQueueEntry(task.id);
+      this.eventEmitter.emit(
+        TaskExecutionQueuedEvent.INTERNAL,
+        new TaskExecutionQueuedEvent(task.id),
+      );
       return;
     }
 
