@@ -9,6 +9,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
+import { TaskSearchPop } from './TaskSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -37,6 +38,8 @@ type TaskDetailHandlers = {
   changeStatus: (payload: { taskId: string; status: TaskStatus }) => Promise<unknown>;
   addTag: (payload: { taskId: string; tag: MetaTagResponseDto }) => Promise<unknown>;
   removeTag: (payload: { taskId: string; tagId: string }) => Promise<unknown>;
+  addDependency: (payload: { taskId: string; dependencyTaskId: string }) => Promise<unknown>;
+  removeDependency: (payload: { taskId: string; dependencyTaskId: string }) => Promise<unknown>;
 };
 
 export type TaskDetailViewProps = {
@@ -159,8 +162,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   // Look up dependency tasks from the real-time tasks array.
   // The useTasks hook already maintains a real-time updated tasks array via WebSocket.
-  // If a dependency isn't in allTasks (e.g., outside the 100-task pagination window),
-  // it simply won't display - which is acceptable behavior.
+  // Missing dependencies are hydrated by the useEffect above to ensure they're always in the cache.
   const dependencyTasks = useMemo(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
       return [];
@@ -266,6 +268,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
+  const [showDependencyPop, setShowDependencyPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
   const toggleExecutionErrorDetails = useCallback((executionId: string) => {
@@ -290,7 +293,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         return;
       }
 
-      if (showNewCommentPop || showAssignPop || showTagPop || respondingToInputRequest) {
+      if (showNewCommentPop || showAssignPop || showTagPop || showDependencyPop || respondingToInputRequest) {
         return;
       }
 
@@ -314,7 +317,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [task, showNewCommentPop, showAssignPop, showTagPop, respondingToInputRequest]);
+  }, [task, showNewCommentPop, showAssignPop, showTagPop, showDependencyPop, respondingToInputRequest]);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
@@ -399,6 +402,37 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
     try {
       await handlers.removeTag({ taskId: task.id, tagId });
+    } catch (err: unknown) {
+      showError(err);
+    }
+  }
+
+  const saveDependency = async (dependencyTask: Task): Promise<boolean> => {
+    if (!task) {
+      return false;
+    }
+    try {
+      await handlers.addDependency({
+        taskId: task.id,
+        dependencyTaskId: dependencyTask.id,
+      });
+      return true;
+    } catch (err: unknown) {
+      showError(err);
+      return false;
+    }
+  }
+
+  const cancelDependency = () => {
+    setShowDependencyPop(false);
+  }
+
+  const removeDependency = async (dependencyTaskId: string) => {
+    if (!task) {
+      return;
+    }
+    try {
+      await handlers.removeDependency({ taskId: task.id, dependencyTaskId });
     } catch (err: unknown) {
       showError(err);
     }
@@ -626,29 +660,39 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRowContainer>
       )}
 
-      {dependencyTasks.length > 0 && (
+      {(dependencyTasks.length > 0 || task) && (
         <DataRowContainer title="Depends on" className='task-detail-page__section'>
           {dependencyTasks.map(depTask => {
-            // Add synthetic status tag to display task status
-            // Note: TaskRow component only uses tag.name, not tag.color
-            const statusTag: MetaTagResponseDto = {
-              id: `status-${depTask.status}`,
-              name: TASKS_STATUS[depTask.status as TaskStatus].label,
-              color: '', // Not used by TaskRow component
-              createdAt: depTask.createdAt,
-              updatedAt: depTask.updatedAt,
-            };
             return (
               <TaskRow
                 key={depTask.id}
-                task={{
-                  ...depTask,
-                  tags: [...depTask.tags, statusTag],
-                }}
+                task={depTask}
                 onClick={() => navigate(`/tasks/task/${depTask.id}`)}
+                additionalTags={[
+                  {
+                    label: '× remove',
+                    color: 'red' as const,
+                    onClick: () => removeDependency(depTask.id),
+                    clickLabel: 'Remove dependency',
+                  },
+                ]}
               />
             );
           })}
+          <DataRow
+            tags={[
+              {
+                label: '+ add dependency',
+                color: 'gray' as const,
+                onClick: () => setShowDependencyPop(true),
+                clickLabel: 'Add dependency',
+              },
+            ]}
+          >
+            <Text tone='muted' size='2'>
+              {dependencyTasks.length === 0 ? 'No dependencies yet' : 'Add another dependency'}
+            </Text>
+          </DataRow>
         </DataRowContainer>
       )}
 
@@ -993,6 +1037,13 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
       {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
+      {showDependencyPop ? (
+        <TaskSearchPop
+          onCancel={cancelDependency}
+          onSave={saveDependency}
+          excludeTaskIds={[task.id, ...(task.dependsOnIds || [])]}
+        />
+      ) : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop
           onCancel={cancelAnswerInputRequest}
@@ -1041,6 +1092,29 @@ export function TaskDetailPage() {
     return () => { cancelled = true; };
   }, [taskId, getTaskById]);
 
+  // Hydrate missing dependencies to ensure all dependency tasks are in the cache.
+  // This prevents dependencies from being invisible (and therefore unremovable) when
+  // they're outside the paginated allTasks cache (limited to 100 tasks).
+  useEffect(() => {
+    if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) return;
+
+    const missingDependencyIds = task.dependsOnIds.filter(
+      depId => !tasks.some(t => t.id === depId)
+    );
+
+    if (missingDependencyIds.length === 0) return;
+
+    // Fetch all missing dependencies in parallel
+    Promise.all(
+      missingDependencyIds.map(depId =>
+        getTaskById(depId).catch(err => {
+          console.error(`Failed to hydrate dependency ${depId}`, err);
+          return null;
+        })
+      )
+    );
+  }, [task, tasks, getTaskById]);
+
   const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
   const handlers: TaskDetailHandlers = {
@@ -1052,6 +1126,32 @@ export function TaskDetailPage() {
     changeStatus: ({ taskId, status }) => TasksService.TasksController_changeStatus({ id: taskId, body: { status } }),
     addTag: ({ taskId, tag }) => TasksService.TasksController_addTagToTask({ id: taskId, body: { name: tag.name } }),
     removeTag: ({ taskId, tagId }) => TasksService.TasksController_removeTagFromTask({ id: taskId, tagId }),
+    addDependency: async ({ taskId, dependencyTaskId }) => {
+      const currentTask = tasks.find(t => t.id === taskId);
+      if (!currentTask) return;
+      const updatedDependsOnIds = [...(currentTask.dependsOnIds || []), dependencyTaskId];
+      await TasksService.TasksController_updateTask({
+        id: taskId,
+        body: { dependsOnIds: updatedDependsOnIds },
+      });
+      // Best-effort: Fetch the dependency task to ensure it's in the cache for rendering.
+      // This prevents the dependency from disappearing if it's not already in allTasks (paginated to 100).
+      // If hydration fails, the mutation already succeeded, so we just log the error.
+      try {
+        await getTaskById(dependencyTaskId);
+      } catch (err) {
+        console.error(`Failed to hydrate dependency ${dependencyTaskId} after adding`, err);
+      }
+    },
+    removeDependency: async ({ taskId, dependencyTaskId }) => {
+      const currentTask = tasks.find(t => t.id === taskId);
+      if (!currentTask) return;
+      const updatedDependsOnIds = (currentTask.dependsOnIds || []).filter(id => id !== dependencyTaskId);
+      await TasksService.TasksController_updateTask({
+        id: taskId,
+        body: { dependsOnIds: updatedDependsOnIds },
+      });
+    },
   };
 
   return (
