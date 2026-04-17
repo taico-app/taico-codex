@@ -55,6 +55,9 @@ export type AgentRunContext = {
 
   /** Allowed tool list for SDKs that support tool filtering */
   allowedTools?: string[];
+
+  /** Abort signal for cancellation */
+  abortSignal?: AbortSignal;
 };
 
 export type AgentRunCallbacks = {
@@ -82,6 +85,8 @@ export type AgentRunResult = {
 
 export interface AgentRunner {
   readonly kind: string;
+
+  cancel?(): void | Promise<void>;
 
   run(
     ctx: AgentRunContext,
