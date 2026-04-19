@@ -4,7 +4,7 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencodeClient, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
-import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext, Model, TokenUsage } from "./AgentRunner.js";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 type OpenCodeMcpServerConfig =
@@ -88,6 +88,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       providerId: hasCustomModel ? modelConfig.providerId! : 'openai',
       modelId: hasCustomModel ? modelConfig.modelId! : 'gpt-5.4',
     };
+  }
+
+  override getModel() {
+    return this.model;
   }
 
   private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
@@ -348,6 +352,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
@@ -463,6 +468,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           await onToolCall?.(event.properties.part.tool);
         }
 
+        const usage = extractOpencodeTokenUsage(event);
+        if (usage) {
+          await onTokenUsage?.(usage);
+        }
+
         const message = formatter.format(event);
         if (message) {
           await emit(message);
@@ -544,4 +554,58 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   private runtimeMcpServers?: AgentRunContext['mcpServers'];
+}
+
+type OpencodeTokenCounts = {
+  input?: unknown;
+  output?: unknown;
+  total?: unknown;
+};
+
+function extractOpencodeTokenUsage(event: unknown): TokenUsage | null {
+  if (!event || typeof event !== 'object') {
+    return null;
+  }
+
+  const properties = (event as {
+    properties?: {
+      info?: { tokens?: OpencodeTokenCounts };
+      message?: { info?: { tokens?: OpencodeTokenCounts } };
+    };
+  }).properties;
+
+  const tokens = properties?.info?.tokens ?? properties?.message?.info?.tokens;
+  if (!tokens) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(tokens.input);
+  const outputTokens = toTokenCount(tokens.output);
+  let totalTokens = toTokenCount(tokens.total);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }

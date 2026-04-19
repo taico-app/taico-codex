@@ -4,6 +4,7 @@ import {
   AgentModelConfig,
   AgentRunContext,
   RuntimeMcpServerConfig,
+  TokenUsage,
 } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
@@ -19,12 +20,20 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     this.model = modelConfig.modelId ?? 'gpt-5.3-codex';
   }
 
+  override getModel() {
+    return {
+      providerId: 'githubcopilot',
+      modelId: this.model,
+    };
+  }
+
   protected async runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
 
@@ -87,10 +96,18 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           }
         });
         session.on('assistant.reasoning', (reasoning) => {
+          const usage = extractCopilotTokenUsage(reasoning);
+          if (usage) {
+            void onTokenUsage?.(usage);
+          }
           void emit(`💬 ${agentLabel} Thinking... ${reasoning.data.content}`);
         });
         session.on('assistant.message', (message) => {
           lastAssistantMessage = message.data.content ?? '';
+          const usage = extractCopilotTokenUsage(message);
+          if (usage) {
+            void onTokenUsage?.(usage);
+          }
           void emit(`💬 ${agentLabel}: ${message.data.content}`);
         });
         session.on('tool.execution_start', (toolCall) => {
@@ -170,4 +187,55 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
       tools: ["*"],
     };
   }
+}
+
+type CopilotUsage = {
+  promptTokens?: unknown;
+  completionTokens?: unknown;
+  totalTokens?: unknown;
+  inputTokens?: unknown;
+  outputTokens?: unknown;
+};
+
+function extractCopilotTokenUsage(event: unknown): TokenUsage | null {
+  if (!event || typeof event !== 'object') {
+    return null;
+  }
+
+  const usage = (event as { data?: { usage?: CopilotUsage } }).data?.usage;
+  if (!usage) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(usage.inputTokens ?? usage.promptTokens);
+  const outputTokens = toTokenCount(
+    usage.outputTokens ?? usage.completionTokens,
+  );
+  let totalTokens = toTokenCount(usage.totalTokens);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }

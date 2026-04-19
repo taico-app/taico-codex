@@ -13,6 +13,7 @@ import {
   AgentModelConfig,
   AgentRunContext,
   RuntimeMcpServerConfig,
+  TokenUsage,
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
@@ -79,12 +80,20 @@ export class ADKAgentRunner extends BaseAgentRunner {
     this.modelId = modelConfig.modelId ?? 'gemini-2.5-flash';
   }
 
+  override getModel() {
+    return {
+      providerId: 'google',
+      modelId: this.modelId,
+    };
+  }
+
   protected async runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     // Check if already aborted before creating any resources
     if (ctx.abortSignal?.aborted) {
@@ -183,6 +192,11 @@ export class ADKAgentRunner extends BaseAgentRunner {
           }
         }
 
+        const usage = extractAdkTokenUsage(msg);
+        if (usage) {
+          await onTokenUsage?.(usage);
+        }
+
         // map → string
         const messages = formatter.format(msg);
         messages.forEach(async (message) => {
@@ -278,4 +292,52 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     return [...new Set(details)];
   }
+}
+
+type AdkUsageMetadata = {
+  promptTokenCount?: unknown;
+  candidatesTokenCount?: unknown;
+  totalTokenCount?: unknown;
+};
+
+function extractAdkTokenUsage(message: unknown): TokenUsage | null {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+
+  const usageMetadata = (message as { usageMetadata?: AdkUsageMetadata })
+    .usageMetadata;
+  if (!usageMetadata) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(usageMetadata.promptTokenCount);
+  const outputTokens = toTokenCount(usageMetadata.candidatesTokenCount);
+  let totalTokens = toTokenCount(usageMetadata.totalTokenCount);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }
