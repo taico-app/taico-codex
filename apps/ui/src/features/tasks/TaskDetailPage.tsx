@@ -475,13 +475,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const loadExecutionsForTask = useCallback(async (taskId: string) => {
     setIsLoadingExecutions(true);
     try {
-      const [activeExecutions, historyExecutions] = await Promise.all([
-        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions(),
-        ExecutionsService.TaskExecutionHistoryController_listHistory(),
+      const [activeResponse, historyResponse] = await Promise.all([
+        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions({ taskId, limit: 100 }),
+        ExecutionsService.TaskExecutionHistoryController_listHistory({ taskId, limit: 100 }),
       ]);
 
-      const taskActiveItems = activeExecutions
-        .filter((entry: ActiveTaskExecutionResponseDto) => entry.taskId === taskId)
+      const taskActiveItems = activeResponse.items
         .map((entry: ActiveTaskExecutionResponseDto): TaskExecutionListItem => ({
           id: `active-${entry.id}`,
           executionId: entry.id,
@@ -495,8 +494,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           errorMessage: null,
         }));
 
-      const taskHistoryItems = historyExecutions
-        .filter((entry: TaskExecutionHistoryResponseDto) => entry.taskId === taskId)
+      const taskHistoryItems = historyResponse.items
         .map((entry: TaskExecutionHistoryResponseDto): TaskExecutionListItem => ({
           id: `history-${entry.id}`,
           executionId: entry.id,
