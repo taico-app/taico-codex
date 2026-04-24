@@ -6,6 +6,7 @@ import { useActorsCtx } from "../actors";
 import { useExecutions } from "./useExecutions";
 import { ExecutionsService } from "./api";
 import { useToast } from "../../shared/context/ToastContext";
+import { useWorkers } from "../workers/useWorkers";
 import type {
   TaskExecutionQueueEntryResponseDto,
   ActiveTaskExecutionResponseDto,
@@ -27,8 +28,20 @@ export function ExecutionsPage() {
     error,
     loadExecutions,
   } = useExecutions();
+  const { workers } = useWorkers();
 
   useDocumentTitle();
+
+  // Calculate connected workers (seen in last 2 minutes)
+  const connectedWorkersCount = useMemo(() => {
+    const now = new Date();
+    const twoMinutesMs = 2 * 60 * 1000;
+    return workers.filter((worker) => {
+      const lastSeen = new Date(worker.lastSeenAt);
+      const diffMs = now.getTime() - lastSeen.getTime();
+      return diffMs <= twoMinutesMs;
+    }).length;
+  }, [workers]);
 
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
     () => new Set(),
@@ -79,6 +92,28 @@ export function ExecutionsPage() {
           <Text as="div" size="3" tone="muted" wrap>
             Queue, active work, and recent history in one place. The view refreshes automatically every 5 seconds.
           </Text>
+          <div className="executions-worker-status">
+            <span
+              className="executions-worker-status__indicator"
+              style={{ color: connectedWorkersCount > 0 ? 'var(--success)' : 'var(--danger)' }}
+              aria-label={connectedWorkersCount > 0 ? 'Workers connected' : 'No workers connected'}
+            >
+              ●
+            </span>
+            <Text as="span" size="2" tone="muted">
+              {connectedWorkersCount > 0
+                ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? 's' : ''} connected`
+                : 'no worker connected'}
+              {' · '}
+              <button
+                type="button"
+                className="executions-worker-status__link"
+                onClick={() => navigate('/settings/workers')}
+              >
+                configure
+              </button>
+            </Text>
+          </div>
         </div>
         <div className="executions-hero__actions">
           <span className={`executions-pill ${error ? "executions-pill--danger" : "executions-pill--success"}`}>
