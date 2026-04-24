@@ -23,7 +23,6 @@ export function ExecutionsPage() {
     active,
     history,
     isLoading,
-    isRefreshing,
     hasLoadedOnce,
     error,
     loadExecutions,
@@ -89,9 +88,6 @@ export function ExecutionsPage() {
     <div className="executions-page">
       <div className="executions-hero">
         <div className="executions-hero__copy">
-          <Text as="div" size="3" tone="muted" wrap>
-            Queue, active work, and recent history in one place. The view refreshes automatically every 5 seconds.
-          </Text>
           <div className="executions-worker-status">
             <span
               className="executions-worker-status__indicator"
@@ -115,14 +111,13 @@ export function ExecutionsPage() {
             </Text>
           </div>
         </div>
-        <div className="executions-hero__actions">
-          <span className={`executions-pill ${error ? "executions-pill--danger" : "executions-pill--success"}`}>
-            {error ? "Fetch failed" : isRefreshing ? "Refreshing" : "Polling"}
-          </span>
-          <Button variant="secondary" onClick={() => void loadExecutions()} disabled={isRefreshing}>
-            Refresh now
-          </Button>
-        </div>
+        {error ? (
+          <div className="executions-hero__actions">
+            <span className="executions-pill executions-pill--danger">
+              Fetch failed
+            </span>
+          </div>
+        ) : null}
       </div>
 
 
