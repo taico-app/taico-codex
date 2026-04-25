@@ -969,6 +969,7 @@ export interface ExecutionStatsResponseDto {
   harness: string | null;
   providerId: string | null;
   modelId: string | null;
+  workerVersion: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
   totalTokens: number | null;
@@ -1030,6 +1031,7 @@ export interface UpdateExecutionStatsDto {
   harness?: string | null;
   providerId?: string | null;
   modelId?: string | null;
+  workerVersion?: string | null;
   inputTokens?: number | null;
   outputTokens?: number | null;
   totalTokens?: number | null;
@@ -1046,6 +1048,7 @@ export interface TaskExecutionHistoryListResponseDto {
 export interface WorkerResponseDto {
   id: string;
   oauthClientId: string;
+  workerVersion: string | null;
   lastSeenAt: string;
   harnesses: ('claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other')[];
   createdAt: string;
