@@ -1,23 +1,35 @@
 import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { useCommandPalette } from '../../ui/components';
+import { MetaService } from '@taico/client';
 
 export function SettingsPage() {
   const { setSectionTitle } = useHomeCtx();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   const { registerCommands } = useCommandPalette();
+  const [version, setVersion] = useState<{ backend: string; ui: string } | null>(null);
 
   // Set document title (browser tab)
   useDocumentTitle();
 
   useEffect(() => {
     setSectionTitle('Settings');
+    loadVersion();
   }, []);
+
+  const loadVersion = async () => {
+    try {
+      const versionData = await MetaService.metaControllerGetVersion();
+      setVersion(versionData);
+    } catch (error) {
+      console.error('Failed to load version:', error);
+    }
+  };
 
   // Register page-specific commands
   useEffect(() => {
@@ -233,6 +245,19 @@ export function SettingsPage() {
           </Row>
         </Stack>
       </Card>
+
+      {version && (
+        <div style={{
+          textAlign: 'center',
+          paddingTop: 'var(--space-6)',
+          marginTop: 'var(--space-4)',
+          borderTop: '1px solid var(--border)',
+        }}>
+          <Text size="1" tone="muted">
+            Taico v{version.backend} • UI v{version.ui}
+          </Text>
+        </div>
+      )}
     </Stack>
   );
 }
