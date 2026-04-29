@@ -10,6 +10,7 @@ import {
   COPILOT_CLAUDE,
   GEMINI_FLASH,
   GPT_5_4,
+  GPT_5_5,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
@@ -59,19 +60,24 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
   },
   {
     type: AgentType.CODEX,
-    label: 'Codex',
-    description: 'Run tasks through the Codex harness.',
+    label: 'Codex App Server',
+    description: 'Run tasks through the Codex app-server harness.',
     modelOptions: [
       defaultModelOption,
       modelOption({
-        label: 'GPT-5.3 Codex',
-        providerId: CODEX.providerId,
-        modelId: CODEX.modelId,
+        label: 'GPT-5.5',
+        providerId: GPT_5_5.providerId,
+        modelId: GPT_5_5.modelId,
       }),
       modelOption({
         label: 'GPT-5.4',
         providerId: GPT_5_4.providerId,
         modelId: GPT_5_4.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.3 Codex',
+        providerId: CODEX.providerId,
+        modelId: CODEX.modelId,
       }),
     ],
   },
@@ -143,8 +149,8 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     label: 'Developer',
     description: 'Picks up queued implementation tasks and brings them to review.',
     type: AgentType.CODEX,
-    providerId: CODEX.providerId,
-    modelId: CODEX.modelId,
+    providerId: GPT_5_5.providerId,
+    modelId: GPT_5_5.modelId,
     agentDescription: 'Developer agent for implementation tasks.',
     systemPrompt: DEV_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
@@ -157,8 +163,8 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     label: 'Code reviewer',
     description: 'Reviews code tasks when they are ready for review.',
     type: AgentType.CODEX,
-    providerId: CODEX.providerId,
-    modelId: CODEX.modelId,
+    providerId: GPT_5_5.providerId,
+    modelId: GPT_5_5.modelId,
     agentDescription:
       'Automated code reviewer that examines PRs and provides feedback on tasks marked for review.',
     systemPrompt: REVIEWER_PROMPT,

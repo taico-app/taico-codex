@@ -173,21 +173,21 @@ export class AppInitRunner implements OnApplicationBootstrap {
     } catch (error) {
       this.logger.error('Error ensuring taico Agent exists');
     }
-    try {
-      await this.ensureAgentExists(createClaudeDev);
-    } catch (error) {
-      this.logger.error('Error ensuring claude-dev Agent exists');
-    }
+    // try {
+    //   await this.ensureAgentExists(createClaudeDev);
+    // } catch (error) {
+    //   this.logger.error('Error ensuring claude-dev Agent exists');
+    // }
     try {
       await this.ensureAgentExists(createCodexDev);
     } catch (error) {
       this.logger.error('Error ensuring codex-dev Agent exists');
     }
-    try {
-      await this.ensureAgentExists(createGeminiAssistant);
-    } catch (error) {
-      this.logger.error('Error ensuring gemini-assistant Agent exists');
-    }
+    // try {
+    //   await this.ensureAgentExists(createGeminiAssistant);
+    // } catch (error) {
+    //   this.logger.error('Error ensuring gemini-assistant Agent exists');
+    // }
     try {
       await this.ensureAgentExists(createCodeReviewer);
     } catch (error) {

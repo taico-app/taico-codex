@@ -83,15 +83,7 @@ export async function executeTask({
     }
 
     // See if the task needs a repo cloned
-    let repoUrl: string | undefined = undefined;
-    const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
-    if (projectTag) {
-      const projectSlug = projectTag.name.replace('project:', '');
-      const project = await workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug: projectSlug });
-      if (project) {
-        repoUrl = project.repoUrl;
-      }
-    }
+    const repoUrl = await resolveProjectRepoUrl(workerClient, task.tags ?? []);
 
     // Prepare the workspace
     const workDir = await prepareWorkspace({
@@ -184,6 +176,9 @@ export async function executeTask({
           accessToken: agentToken.token,
           executionId,
           resume: undefined,
+          options: {
+            codexMentions: buildCodexMentions(agent.allowedTools ?? []),
+          },
           agentSlug: agent.slug,
           mcpServers: runtimeMcpServers,
           allowedTools,
@@ -375,4 +370,72 @@ function attachRuntimeAuthHeaders(
       Authorization: `Bearer ${accessToken}`,
     };
   }
+}
+
+async function resolveProjectRepoUrl(
+  workerClient: ApiClient,
+  tags: Array<{ name: string }>,
+): Promise<string | undefined> {
+  const projectTags = tags
+    .map((tag) => tag.name.trim())
+    .filter((tagName) => tagName.toLowerCase().startsWith('project:'));
+
+  if (projectTags.length === 0) {
+    return undefined;
+  }
+
+  const failures: string[] = [];
+  for (const tagName of projectTags) {
+    const projectSlug = tagName.slice(tagName.indexOf(':') + 1).trim();
+    if (!projectSlug) {
+      failures.push(`${tagName}: empty project slug`);
+      continue;
+    }
+
+    try {
+      const project =
+        await workerClient.metaProjects.ProjectsController_getProjectBySlug({
+          slug: projectSlug,
+        });
+      const repoUrl = project.repoUrl?.trim();
+      if (repoUrl) {
+        console.log(
+          `[worker] Resolved ${tagName} to repo ${repoUrl}`,
+        );
+        return repoUrl;
+      }
+
+      failures.push(`${tagName}: project has no repository URL`);
+    } catch (error) {
+      failures.push(
+        `${tagName}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  throw new TaskExecutionPreconditionError(
+    `Task has project tag(s), but none resolve to a repository URL: ${failures.join('; ')}`,
+  );
+}
+
+function buildCodexMentions(
+  allowedTools: string[],
+): Array<{ name: string; path: string }> {
+  return allowedTools
+    .filter((tool) => tool.startsWith('app://') || tool.startsWith('plugin://'))
+    .map((path) => ({
+      name: inferCodexMentionName(path),
+      path,
+    }));
+}
+
+function inferCodexMentionName(path: string): string {
+  if (path.startsWith('app://')) {
+    return path.slice('app://'.length);
+  }
+
+  const pluginRef = path.slice('plugin://'.length);
+  return pluginRef.split('@')[0] || pluginRef;
 }

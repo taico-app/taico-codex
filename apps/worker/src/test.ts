@@ -3,6 +3,7 @@
 import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
 import { AgentRunCallbacks, AgentRunContext } from "./runners/AgentRunner.js";
 import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
+import { CodexAgentRunner } from "./runners/CodexAgentRunner.js";
 import { GitHubCopilotAgentRunner } from "./runners/GitHubCopilotAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 
@@ -68,6 +69,11 @@ async function main(): Promise<void> {
   //   runContext,
   //   callbacks,
   // });
+
+  // await codex({
+  //   runContext,
+  //   callbacks,
+  // });
 }
 
 
@@ -91,5 +97,9 @@ async function copilot({ runContext, callbacks }: AgentArgs) {
   runner.run(runContext, callbacks);
 }
 
+async function codex({ runContext, callbacks }: AgentArgs) {
+  const runner = new CodexAgentRunner({});
+  runner.run(runContext, callbacks);
+}
 
 void main();
