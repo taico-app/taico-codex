@@ -170,7 +170,7 @@ jobs:
       - name: Checkout spark-ops
         uses: actions/checkout@v5
         with:
-          repository: taico-app/spark-ops
+          repository: galarzafrancisco/spark-ops
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
 
