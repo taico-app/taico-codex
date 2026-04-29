@@ -1,24 +1,24 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: taico
-  namespace: taico
+  name: taico-codex
+  namespace: taico-codex
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - taico.app
-      secretName: taico-tls
+        - codex.taico.app
+      secretName: taico-codex-tls
   rules:
-    - host: taico.app
+    - host: codex.taico.app
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: taico
+                name: taico-codex
                 port:
                   number: 80

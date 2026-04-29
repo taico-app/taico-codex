@@ -1,12 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: taico
-  namespace: taico
+  name: taico-codex
+  namespace: taico-codex
 spec:
   dnsNames:
-    - taico.app
-  secretName: taico-tls
+    - codex.taico.app
+  secretName: taico-codex-tls
   issuerRef:
     name: letsencrypt-cluster-issuer
     kind: ClusterIssuer

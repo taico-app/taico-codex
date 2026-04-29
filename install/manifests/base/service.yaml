@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: taico
-  namespace: taico
+  name: taico-codex
+  namespace: taico-codex
   labels:
-    app: taico
+    app: taico-codex
 spec:
   type: ClusterIP
   selector:
-    app: taico
+    app: taico-codex
   ports:
     - name: http
       port: 80

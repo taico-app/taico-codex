@@ -10,28 +10,6 @@ resources:
 - ../../base
 
 replacements:
-  # Replace STORAGE_PATH in volume hostPath
-  - source:
-      kind: ConfigMap
-      name: env
-      fieldPath: data.STORAGE_PATH
-    targets:
-      - select:
-          kind: Deployment
-          name: taico
-        fieldPaths:
-          - spec.template.spec.volumes.[name=data].hostPath.path
-  # Replace ISSUER_URL in taico-config ConfigMap
-  - source:
-      kind: ConfigMap
-      name: env
-      fieldPath: data.ISSUER_URL
-    targets:
-      - select:
-          kind: ConfigMap
-          name: taico-config
-        fieldPaths:
-          - data.ISSUER_URL
   # Replace GOOGLE_GENAI_USE_VERTEXAI in taico-config ConfigMap
   - source:
       kind: ConfigMap
@@ -40,10 +18,10 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: taico-config
+          name: taico-codex-config
         fieldPaths:
           - data.GOOGLE_GENAI_USE_VERTEXAI
-  # Replace GOOGLE_CLOUD_PROJECT in taico-config ConfigMap
+  # Replace GOOGLE_CLOUD_PROJECT in taico-codex-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -51,10 +29,10 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: taico-config
+          name: taico-codex-config
         fieldPaths:
           - data.GOOGLE_CLOUD_PROJECT
-  # Replace GOOGLE_CLOUD_LOCATION in taico-config ConfigMap
+  # Replace GOOGLE_CLOUD_LOCATION in taico-codex-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -62,10 +40,10 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: taico-config
+          name: taico-codex-config
         fieldPaths:
           - data.GOOGLE_CLOUD_LOCATION
-  # Replace GOOGLE_APPLICATION_CREDENTIALS in taico-config ConfigMap
+  # Replace GOOGLE_APPLICATION_CREDENTIALS in taico-codex-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -73,6 +51,6 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: taico-config
+          name: taico-codex-config
         fieldPaths:
           - data.GOOGLE_APPLICATION_CREDENTIALS
