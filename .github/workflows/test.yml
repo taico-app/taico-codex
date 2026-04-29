@@ -162,15 +162,15 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout ai-monorepo
+      - name: Checkout taico-codex
         uses: actions/checkout@v5
         with:
-          path: ai-monorepo
+          path: taico-codex
 
       - name: Checkout spark-ops
         uses: actions/checkout@v5
         with:
-          repository: galarzafrancisco/spark-ops
+          repository: taico-app/spark-ops
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
 
@@ -188,17 +188,17 @@ jobs:
       - name: Copy manifests to spark-ops
         run: |
           # Remove old manifests if they exist
-          rm -rf spark-ops/k8s/taico
+          rm -rf spark-ops/k8s/taico-codex
 
           # Copy entire manifests directory
           mkdir -p spark-ops/k8s
-          cp -r ai-monorepo/install/manifests spark-ops/k8s/taico
+          cp -r taico-codex/install/manifests spark-ops/k8s/taico-codex
 
           # Update image tag in deployment.yaml
-          cd spark-ops/k8s/taico/base
+          cd spark-ops/k8s/taico-codex/base
 
           # Use kustomize to set image tag
-          kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
+          kustomize edit set image ghcr.io/taico-app/taico-codex=ghcr.io/taico-app/taico-codex:${{ steps.image-tag.outputs.tag }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
