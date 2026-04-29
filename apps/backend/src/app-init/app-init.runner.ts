@@ -7,7 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { AgentsService } from 'src/agents/agents.service';
-import { createClaudeDev } from './agent/claude-dev.agent';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
 import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
@@ -18,7 +17,10 @@ import {
   AgentResult,
   CreateAgentInput,
 } from 'src/agents/dto/service/agents.service.types';
-import { AgentSlugConflictError } from 'src/agents/errors/agents.errors';
+import {
+  AgentNotFoundError,
+  AgentSlugConflictError,
+} from 'src/agents/errors/agents.errors';
 import { createContext, createContextScopes } from './mcp/context.mcp';
 import { getConfig } from 'src/config/env.config';
 import { devUser, devUserRole } from './user/dev.user';
@@ -30,8 +32,8 @@ import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { AgentEntity } from 'src/agents/agent.entity';
 import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
 import { Scope } from 'src/auth/core/types/scope.type';
-import { createCodexDev } from './agent/codex-dev.agent';
-import { createGeminiAssistant } from './agent/gemini-assistant.agent';
+import { createDeveloper } from './agent/developer.agent';
+import { createGeneralHelper } from './agent/helper.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
@@ -46,6 +48,19 @@ import {
   createInternalWorkerAuthScopes,
   createInternalWorkerAuthTarget,
 } from './mcp/internal-worker-auth.mcp';
+
+const DEFAULT_AGENT_CONFIGS: CreateAgentInput[] = [
+  createTaico,
+  createCodeReviewer,
+  createDeveloper,
+  createGeneralHelper,
+];
+
+const RETIRED_DEFAULT_AGENT_SLUGS = [
+  'claude-dev',
+  'gpt-codex-dev',
+  'gemini-assistant',
+];
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -167,31 +182,14 @@ export class AppInitRunner implements OnApplicationBootstrap {
   }
 
   async ensureAgents() {
-    // Create agents
-    try {
-      await this.ensureAgentExists(createTaico);
-    } catch (error) {
-      this.logger.error('Error ensuring taico Agent exists');
-    }
-    // try {
-    //   await this.ensureAgentExists(createClaudeDev);
-    // } catch (error) {
-    //   this.logger.error('Error ensuring claude-dev Agent exists');
-    // }
-    try {
-      await this.ensureAgentExists(createCodexDev);
-    } catch (error) {
-      this.logger.error('Error ensuring codex-dev Agent exists');
-    }
-    // try {
-    //   await this.ensureAgentExists(createGeminiAssistant);
-    // } catch (error) {
-    //   this.logger.error('Error ensuring gemini-assistant Agent exists');
-    // }
-    try {
-      await this.ensureAgentExists(createCodeReviewer);
-    } catch (error) {
-      this.logger.error('Error ensuring code-reviewer Agent exists');
+    await this.removeRetiredDefaultAgents();
+
+    for (const agentConfig of DEFAULT_AGENT_CONFIGS) {
+      try {
+        await this.ensureAgentExists(agentConfig);
+      } catch (error) {
+        this.logger.error(`Error ensuring ${agentConfig.slug} Agent exists`);
+      }
     }
   }
 
@@ -255,13 +253,41 @@ export class AppInitRunner implements OnApplicationBootstrap {
         agent = await this.agentsService.getAgentBySlug({
           slug: agentConfig.slug,
         });
-        // TODO: rework the update method
-        // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
+        agent = await this.agentsService.patchAgent(agent.actorId, {
+          name: agentConfig.name,
+          type: agentConfig.type,
+          description: agentConfig.description ?? null,
+          introduction: agentConfig.introduction ?? null,
+          systemPrompt: agentConfig.systemPrompt,
+          providerId: agentConfig.providerId,
+          modelId: agentConfig.modelId,
+          statusTriggers: agentConfig.statusTriggers,
+          tagTriggers: agentConfig.tagTriggers ?? [],
+          allowedTools: agentConfig.allowedTools,
+          isActive: agentConfig.isActive ?? true,
+          concurrencyLimit: agentConfig.concurrencyLimit ?? null,
+          avatarUrl: agentConfig.avatarUrl,
+        });
       } else {
         throw error;
       }
     }
     return agent;
+  }
+
+  private async removeRetiredDefaultAgents(): Promise<void> {
+    for (const slug of RETIRED_DEFAULT_AGENT_SLUGS) {
+      try {
+        const agent = await this.agentsService.getAgentBySlug({ slug });
+        await this.agentsService.deleteAgent(agent.actorId);
+        this.logger.log(`Retired default agent ${slug}`);
+      } catch (error) {
+        if (error instanceof AgentNotFoundError) {
+          continue;
+        }
+        this.logger.error(`Error retiring default agent ${slug}`);
+      }
+    }
   }
 
   async ensureMcpServerExists(
