@@ -217,6 +217,18 @@ export class TasksMcpGateway {
       },
     );
 
+    const fetchTaskById = async ({ taskId }: { taskId: string }) => {
+      const task = await this.tasksService.getTaskById(taskId);
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(task),
+          },
+        ],
+      };
+    };
+
     server.registerTool(
       'fetch',
       {
@@ -227,17 +239,20 @@ export class TasksMcpGateway {
           taskId: z.string(),
         },
       },
-      async ({ taskId }) => {
-        const task = await this.tasksService.getTaskById(taskId);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(task),
-            },
-          ],
-        };
+      fetchTaskById,
+    );
+
+    server.registerTool(
+      'get_task',
+      {
+        title: 'Get task details',
+        description: 'Retrieve full details of a task by ID',
+        annotations: readOnlyAnnotations,
+        inputSchema: {
+          taskId: z.string(),
+        },
       },
+      fetchTaskById,
     );
 
     server.registerTool(

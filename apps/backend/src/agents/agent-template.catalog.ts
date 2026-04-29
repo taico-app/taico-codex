@@ -10,6 +10,7 @@ import {
   COPILOT_CLAUDE,
   GEMINI_FLASH,
   GPT_5_4,
+  GPT_5_5,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
@@ -54,6 +55,29 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
         label: 'Claude Sonnet 4.6',
         providerId: ANTHROPIC_CLAUDE.providerId,
         modelId: ANTHROPIC_CLAUDE.modelId,
+      }),
+    ],
+  },
+  {
+    type: AgentType.CODEX,
+    label: 'Codex App Server',
+    description: 'Run tasks through the Codex app-server harness.',
+    modelOptions: [
+      defaultModelOption,
+      modelOption({
+        label: 'GPT-5.5',
+        providerId: GPT_5_5.providerId,
+        modelId: GPT_5_5.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.4',
+        providerId: GPT_5_4.providerId,
+        modelId: GPT_5_4.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.3 Codex',
+        providerId: CODEX.providerId,
+        modelId: CODEX.modelId,
       }),
     ],
   },
